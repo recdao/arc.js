@@ -3,8 +3,6 @@ import { AvatarService } from "../avatarService";
 import {
   Address,
   DefaultSchemePermissions,
-  fnVoid,
-  GetDaoProposalsConfig,
   Hash,
   SchemePermissions
 } from "../commonTypes";
@@ -16,13 +14,13 @@ import {
   ArcTransactionProposalResult,
   ArcTransactionResult,
   ContractWrapperBase,
-  DecodedLogEntryEvent,
-  EventFetcherFactory,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
+import { EventFetcherFactory } from "../web3EventService";
 import {
   ProposalDeletedEventResult,
   ProposalExecutedEventResult,
@@ -311,44 +309,27 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
   }
 
   /**
-   * Return all ContributionReward proposals ever created under the given avatar.
-   * Filter by the optional proposalId.
+   * Use proposalService to work with proposals creating used this ContributionReward.
+   *
+   * For example:
+   *
+   * `const proposals = await wrapper.getProposals({avatar: anAddress});`
+   *
+   * or:
+   *
+   * `const proposal = await wrapper.getProposal({avatar: anAddress, proposalId: proposalHash });`
    */
-  public async getDaoProposals(
-    options: GetDaoProposalsConfig = {} as GetDaoProposalsConfig): Promise<Array<ContributionProposal>> {
-
-    const defaults = {
-      proposalId: null,
-    };
-
-    options = Object.assign({}, defaults, options);
-
-    if (!options.avatar) {
-      throw new Error("avatar address is not defined");
-    }
-
-    const proposals = new Array<ContributionProposal>();
-
-    if (options.proposalId) {
-      const orgProposal = await this.contract.organizationsProposals(options.avatar, options.proposalId);
-      const proposal = this.orgProposalToContributionProposal(orgProposal, options.proposalId);
-      proposals.push(proposal);
-    } else {
-      const eventFetcher = this.NewContributionProposal({ _avatar: options.avatar }, { fromBlock: 0 });
-      await new Promise((resolve: fnVoid): void => {
-        eventFetcher.get(async (err: any, log: Array<DecodedLogEntryEvent<NewContributionProposalEventResult>>) => {
-          for (const event of log) {
-            const proposalId = event.args._proposalId;
-            const orgProposal = await this.contract.organizationsProposals(options.avatar, proposalId);
-            const proposal = this.orgProposalToContributionProposal(orgProposal, proposalId);
-            proposals.push(proposal);
-          }
-          resolve();
-        });
-      });
-    }
-
-    return proposals;
+  public get proposalService(): ProposalService<ContributionProposal> {
+    return new ProposalService<ContributionProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, proposalHash: string): ContributionProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, proposalHash),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          this.contract.organizationsProposals(options.avatar, options.proposalId),
+      proposalsEventFetcher: this.NewContributionProposal,
+    });
   }
 
   /**
@@ -376,7 +357,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
       throw new Error("beneficiaryAddress is not defined");
     }
 
-    const proposals = await this.getDaoProposals(options);
+    const proposals = await this.proposalService.getProposals(options);
 
     const rewardsArray = new Array<ProposalRewards>();
 
@@ -462,7 +443,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
     proposalRewards[`${rewardName}Redeemable`] = amountRedeemable;
   }
 
-  private orgProposalToContributionProposal(orgProposal: Array<any>, proposalId: Hash): ContributionProposal {
+  private convertProposalPropsArrayToObject(orgProposal: Array<any>, proposalId: Hash): ContributionProposal {
     return {
       beneficiaryAddress: orgProposal[6],
       contributionDescriptionHash: orgProposal[9],

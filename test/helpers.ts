@@ -151,7 +151,10 @@ export async function voteWasExecuted(votingMachine: any, proposalId: Hash): Pro
     } else {
       event = votingMachine.ExecuteProposal({ _proposalId: proposalId }, { fromBlock: 0 });
     }
-    event.get((err: Error, events: Array<any>): void => {
+    event.get((err: Error, events: Array<any>, reject: (error: Error) => void): void => {
+      if (err) {
+        return reject(err);
+      }
       resolve(events.length === 1);
     });
   });
@@ -210,14 +213,14 @@ export async function increaseTime(duration: number): Promise<void> {
       method: "evm_increaseTime",
       params: [duration],
     }, (err1: any) => {
-      if (err1) { reject(err1); }
+      if (err1) { return reject(err1); }
 
       web3.currentProvider.sendAsync({
         id: id + 1,
         jsonrpc: "2.0",
         method: "evm_mine",
       }, (err2: any, res: any): void => {
-        err2 ? reject(err2) : resolve(res);
+        return err2 ? reject(err2) : resolve(res);
       });
     });
   });

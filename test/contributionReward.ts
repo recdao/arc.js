@@ -215,18 +215,17 @@ describe("ContributionReward scheme", () => {
 
     const proposalId2 = result.proposalId;
 
-    let proposals = await scheme.getDaoProposals({ avatar: dao.avatar.address });
+    const proposals = await scheme.proposalService.getProposals({ avatar: dao.avatar.address });
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId1).length, "proposalId1 not found");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
 
-    proposals = await scheme.getDaoProposals({ avatar: dao.avatar.address, proposalId: proposalId2 });
+    const proposal = await scheme.proposalService.getProposal({ avatar: dao.avatar.address, proposalId: proposalId2 });
 
-    assert.equal(proposals.length, 1, "Should have found 1 proposals");
-    assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
-    assert.equal(proposals[0].beneficiaryAddress, accounts[1],
-      "benebeneficiaryAddressficiary not set properly on proposal");
+    assert(proposal.proposalId === proposalId2, "proposalId2 not found");
+    assert.equal(proposal.beneficiaryAddress, accounts[1],
+      "beneficiaryAddress not set properly on proposal");
   });
 
   it("can get beneficiaryAddress's outstanding rewards", async () => {
@@ -239,7 +238,7 @@ describe("ContributionReward scheme", () => {
 
     const reputationChangeProposalId = result.proposalId;
 
-    const proposals = await scheme.getDaoProposals({ avatar: dao.avatar.address });
+    const proposals = await scheme.proposalService.getProposals({ avatar: dao.avatar.address });
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === nativeRewardProposalId).length,
@@ -298,14 +297,18 @@ describe("ContributionReward scheme", () => {
       proposalId: nativeRewardProposalId,
     });
 
-    const found = (await new Promise(async (resolve: (result: boolean) => void): Promise<void> => {
-      const event = scheme.RedeemNativeToken(
-        { _avatar: dao.avatar.address, _proposalId: nativeRewardProposalId }, { fromBlock: 0 });
+    const found = (await
+      new Promise(async (resolve: (result: boolean) => void, reject: (error: Error) => void): Promise<void> => {
+        const event = scheme.RedeemNativeToken(
+          { _avatar: dao.avatar.address, _proposalId: nativeRewardProposalId }, { fromBlock: 0 });
 
-      event.get((err: Error, events: Array<DecodedLogEntryEvent<RedeemNativeTokenEventResult>>) => {
-        resolve(events.length === 1);
-      });
-    }));
+        event.get((err: Error, events: Array<DecodedLogEntryEvent<RedeemNativeTokenEventResult>>) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(events.length === 1);
+        });
+      }));
 
     assert(found, "RedeemNativeToken was not fired");
 

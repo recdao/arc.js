@@ -4,10 +4,10 @@ import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
   ContractWrapperBase,
-  EventFetcherFactory,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { EventFetcherFactory } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class VoteInOrganizationSchemeWrapper extends ContractWrapperBase implements SchemeWrapper {

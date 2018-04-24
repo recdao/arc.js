@@ -84,7 +84,7 @@ export class DAO {
    */
   public static async getGenesisDao(daoCreatorAddress?: Address): Promise<string> {
     return new Promise<string>(
-      async (resolve: (address: Address) => void, reject: (ex: any) => void): Promise<void> => {
+      async (resolve: (address: Address) => void, reject: (ex: Error) => void): Promise<void> => {
         try {
           const daoCreator =
             daoCreatorAddress ?
@@ -94,16 +94,16 @@ export class DAO {
           /**
            * this first DAO returned will be DAOstack
            */
-          event.get((err: any, log: Array<DecodedLogEntryEvent<InitialSchemesSetEventResult>>) => {
+          event.get((err: Error, log: Array<DecodedLogEntryEvent<InitialSchemesSetEventResult>>) => {
             if (err) {
               LoggingService.error(`getGenesisDao: Error obtaining Genesis Dao: ${err}`);
-              reject(err);
+              return reject(err);
             }
             avatarAddress = log[0].args._avatar;
             resolve(avatarAddress);
           });
         } catch (ex) {
-          reject(ex);
+          return reject(ex);
         }
       });
   }
@@ -130,10 +130,10 @@ export class DAO {
 
           const initSchemesEvent = daoCreator.InitialSchemesSet({}, { fromBlock: 0 });
 
-          initSchemesEvent.get(async (err: any, log: Array<DecodedLogEntryEvent<InitialSchemesSetEventResult>>) => {
+          initSchemesEvent.get(async (err: Error, log: Array<DecodedLogEntryEvent<InitialSchemesSetEventResult>>) => {
             if (err) {
               LoggingService.error(`getDaos: Error obtaining DAOs: ${err}`);
-              reject(err);
+              return reject(err);
             }
             for (const event of log) {
               const avatarAddress = event.args._avatar;
@@ -154,7 +154,7 @@ export class DAO {
           });
         } catch (ex) {
           LoggingService.error(`getDaos: Error obtaining DAOs: ${ex}`);
-          reject(ex);
+          return reject(ex);
         }
       });
   }
@@ -260,16 +260,19 @@ export class DAO {
       { fromBlock: 0, toBlock: "latest" }
     );
 
-    await new Promise((resolve: fnVoid): void => {
+    await new Promise((resolve: fnVoid, reject: (error: Error) => void): void => {
       registerSchemeEvent.get((
-        err: any,
+        err: Error,
         log: DecodedLogEntryEvent<ControllerRegisterSchemeEventLogEntry> |
-          Array<DecodedLogEntryEvent<ControllerRegisterSchemeEventLogEntry>>) =>
-
+          Array<DecodedLogEntryEvent<ControllerRegisterSchemeEventLogEntry>>) => {
+        if (err) {
+          return reject(err);
+        }
         this._handleSchemeEvent(log, foundSchemes)
           .then((): void => {
             resolve();
-          })
+          });
+      }
       );
     });
 
@@ -322,16 +325,18 @@ export class DAO {
       { fromBlock: 0, toBlock: "latest" }
     );
 
-    await new Promise((resolve: fnVoid): void => {
+    await new Promise((resolve: fnVoid, reject: (error: Error) => void): void => {
       event.get((
         err: any,
         log: DecodedLogEntryEvent<ControllerAddGlobalConstraintsEventLogEntry> |
-          Array<DecodedLogEntryEvent<ControllerAddGlobalConstraintsEventLogEntry>>) =>
-
+          Array<DecodedLogEntryEvent<ControllerAddGlobalConstraintsEventLogEntry>>) => {
+        if (err) {
+          return reject(err);
+        }
         this._handleConstraintEvent(log, foundConstraints).then(() => {
           resolve();
-        })
-      );
+        });
+      });
     });
 
     const registeredConstraints = [];

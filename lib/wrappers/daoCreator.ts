@@ -7,11 +7,11 @@ import { ConfigService } from "../configService";
 import {
   ArcTransactionResult,
   ContractWrapperBase,
-  EventFetcherFactory,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
+import { EventFetcherFactory } from "../web3EventService";
 import { WrapperService } from "../wrapperService";
 
 export class DaoCreatorWrapper extends ContractWrapperBase {

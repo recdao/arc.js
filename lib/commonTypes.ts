@@ -1,3 +1,4 @@
+import { ArcTransactionResult } from "./contractWrapperBase";
 import { Utils } from "./utils";
 
 export type fnVoid = () => void;
@@ -20,20 +21,9 @@ export interface VoteConfig {
 }
 
 export enum BinaryVoteResult {
-  None = 0,
+  Abstain = 0,
   Yes = 1,
   No = 2,
-}
-
-export interface GetDaoProposalsConfig {
-  /**
-   * The avatar under which the proposals were created
-   */
-  avatar: Address;
-  /**
-   * Optionally filter on the given proposalId
-   */
-  proposalId?: Hash;
 }
 
 export enum SchemePermissions {
@@ -89,4 +79,24 @@ export interface SchemeWrapper {
   getSchemeParameters(avatarAddress: Address): Promise<any>;
   getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions;
   getSchemePermissions(avatarAddress: Address): Promise<SchemePermissions>;
+}
+
+export interface VotingMachine {
+  vote(options: VoteConfig): Promise<ArcTransactionResult>;
+  voteStatus(proposalId: Hash, choice: number): Promise<Array<number>>;
+}
+
+export interface GetVoteStatusConfig {
+  /**
+   * unique hash of proposal index
+   */
+  proposalId: string;
+  /**
+   * the choice of vote, like 1 (YES) or 2 (NO).
+   */
+  vote: number;
+}
+
+export interface HasContract {
+  contract: any;
 }

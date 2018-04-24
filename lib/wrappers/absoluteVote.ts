@@ -4,10 +4,10 @@ import { Address, Hash, VoteConfig } from "../commonTypes";
 import {
   ArcTransactionDataResult,
   ArcTransactionResult,
-  ContractWrapperBase,
-  EventFetcherFactory
+  ContractWrapperBase
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { EventFetcherFactory } from "../web3EventService";
 import { ExecuteProposalEventResult, NewProposalEventResult, VoteProposalEventResult } from "./commonEventInterfaces";
 
 export class AbsoluteVoteWrapper extends ContractWrapperBase {

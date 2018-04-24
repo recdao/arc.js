@@ -9,13 +9,13 @@ import {
   ArcTransactionResult,
   ContractWrapperBase,
   DecodedLogEntryEvent,
-  EventFetcherFactory,
   StandardSchemeParams,
   TransactionReceiptTruffle,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
+import { EventFetcherFactory } from "../web3EventService";
 import { ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class VestingSchemeWrapper extends ContractWrapperBase implements SchemeWrapper {

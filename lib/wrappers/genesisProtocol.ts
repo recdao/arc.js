@@ -1,11 +1,11 @@
 "use strict";
-import * as BigNumber from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 import {
   Address,
   BinaryVoteResult,
   DefaultSchemePermissions,
   fnVoid,
-  GetDaoProposalsConfig,
+  GetVoteStatusConfig,
   Hash,
   SchemePermissions,
   SchemeWrapper,
@@ -18,11 +18,12 @@ import {
   ArcTransactionResult,
   ContractWrapperBase,
   DecodedLogEntryEvent,
-  EventFetcherFactory,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
+import { EventFetcherFactory } from "../web3EventService";
 import {
   ExecuteProposalEventResult,
   NewProposalEventResult,
@@ -282,9 +283,9 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the current proposal score.
    * @param {GetScoreConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
-  public async getScore(options: GetScoreConfig = {} as GetScoreConfig): Promise<BigNumber.BigNumber> {
+  public async getScore(options: GetScoreConfig = {} as GetScoreConfig): Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -320,11 +321,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the token amount to which the given staker is entitled in the event that the proposal is approved.
    * @param {GetRedeemableTokensStakerConfig} opts
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getRedeemableTokensStaker(
     options: GetRedeemableTokensStakerConfig = {} as GetRedeemableTokensStakerConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -345,11 +346,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the reputation amount to which the proposal proposer is entitled in the event that the proposal is approved.
    * @param {GetRedeemableReputationProposerConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getRedeemableReputationProposer(
     options: GetRedeemableReputationProposerConfig = {} as GetRedeemableReputationProposerConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -363,11 +364,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the token amount to which the voter is entitled in the event that the proposal is approved.
    * @param {GetRedeemableTokensVoterConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getRedeemableTokensVoter(
     options: GetRedeemableTokensVoterConfig = {} as GetRedeemableTokensVoterConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -388,11 +389,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the reputation amount to which the voter is entitled in the event that the proposal is approved.
    * @param {GetRedeemableReputationVoterConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getRedeemableReputationVoter(
     options: GetRedeemableReputationVoterConfig = {} as GetRedeemableReputationVoterConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -412,11 +413,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the reputation amount to which the staker is entitled in the event that the proposal is approved.
    * @param {GetRedeemableReputationStakerConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getRedeemableReputationStaker(
     options: GetRedeemableReputationStakerConfig = {} as GetRedeemableReputationStakerConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -489,11 +490,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Returns the reputation currently voted on the given choice.
    * @param {GetVoteStatusConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getVoteStatus(
     options: GetVoteStatusConfig = {} as GetVoteStatusConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -630,11 +631,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Return the amount stakes behind a given proposal and vote.
    * @param {GetVoteStakeConfig} options
-   * @returns Promise<BigNumber.BigNumber>
+   * @returns Promise<BigNumber>
    */
   public async getVoteStake(
     options: GetVoteStakeConfig = {} as GetVoteStakeConfig)
-    : Promise<BigNumber.BigNumber> {
+    : Promise<BigNumber> {
 
     if (!options.proposalId) {
       throw new Error("proposalId is not defined");
@@ -689,11 +690,34 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   }
 
   /**
+   * Use proposalService to work with proposals creating used GenesisProtocol.
+   *
+   * For example:
+   *
+   * `const proposals = await wrapper.getProposals({avatar: anAddress});`
+   *
+   * or:
+   *
+   * `const proposal = await wrapper.getProposal({avatar: anAddress, proposalId: proposalHash });`
+   */
+  public get proposalService(): ProposalService<GenesisProtocolProposal> {
+    return new ProposalService<GenesisProtocolProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, proposalHash: string): GenesisProtocolProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, proposalHash),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(options.proposalId),
+      proposalsEventFetcher: this.NewProposal,
+    });
+  }
+
+  /**
    * Return all executed GenesisProtocol proposals created under the given avatar.
    * Filter by the optional proposalId.
    */
   public async getExecutedDaoProposals(
-    options: GetDaoProposalsConfig = {} as GetDaoProposalsConfig)
+    options: GetExecutedProposalsConfig = {} as GetExecutedProposalsConfig)
     : Promise<Array<ExecutedGenesisProposal>> {
 
     const defaults = {
@@ -865,6 +889,25 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
       throw new Error("vote is not valid");
     }
   }
+
+  private convertProposalPropsArrayToObject(proposalArray: Array<any>, proposalId: Hash): GenesisProtocolProposal {
+    return {
+      avatarAddress: proposalArray[0],
+      boostedPhaseTime: proposalArray[7],
+      currentBoostedVotePeriodLimit: proposalArray[12],
+      executable: proposalArray[2],
+      lostReputation: proposalArray[5],
+      numOfChoices: proposalArray[1],
+      paramsHash: proposalArray[13],
+      proposalId,
+      proposer: proposalArray[11],
+      state: proposalArray[9],
+      submittedTime: proposalArray[6],
+      totalVotes: proposalArray[3],
+      votersStakes: proposalArray[4],
+      winningVote: proposalArray[10],
+    };
+  }
 }
 
 /**
@@ -885,7 +928,7 @@ export const GenesisProtocolFactory =
   new GenesisProtocolFactoryType("GenesisProtocol", GenesisProtocolWrapper) as GenesisProtocolFactoryType;
 
 export interface StakeEventResult {
-  _amount: BigNumber.BigNumber;
+  _amount: BigNumber;
   /**
    * indexed
    */
@@ -898,7 +941,7 @@ export interface StakeEventResult {
 }
 
 export interface RedeemEventResult {
-  _amount: BigNumber.BigNumber;
+  _amount: BigNumber;
   /**
    * indexed
    */
@@ -930,7 +973,7 @@ export interface GenesisProtocolParams {
    * Constant A in the threshold calculation,in Wei. See [[GenesisProtocolWrapper.getThreshold]].
    * Default is 2, converted to Wei
    */
-  thresholdConstA: BigNumber.BigNumber | string;
+  thresholdConstA: BigNumber | string;
   /**
    * Constant B in the threshold calculation. See [[GenesisProtocolWrapper.getThreshold]].
    * Default is 10
@@ -951,7 +994,7 @@ export interface GenesisProtocolParams {
    * See [[GenesisProtocolWrapper.getRedeemableReputationProposer]].
    * Default is 5, converted to Wei.
    */
-  proposingRepRewardConstA: BigNumber.BigNumber | string;
+  proposingRepRewardConstA: BigNumber | string;
   /**
    * Constant B in the calculation of the proposer's reward.
    * See [[GenesisProtocolWrapper.getRedeemableReputationProposer]].
@@ -980,14 +1023,6 @@ export interface GenesisProtocolParams {
   votersReputationLossRatio: number;
 }
 
-/**
- * Javascript version of the Arc ExecutableInterface,
- * for information purposes.
- */
-export interface ExecutableInterface {
-  execute(proposalId: number, avatar: Address, vote: number): Promise<boolean>;
-}
-
 export interface ProposeVoteConfig {
   /**
    * The DAO's avatar under which the proposal is being made.
@@ -1010,43 +1045,43 @@ export interface ProposeVoteConfig {
 
 export interface GetVoterInfoResult {
   vote: number;
-  reputation: BigNumber.BigNumber;
+  reputation: BigNumber;
 }
 
 export interface GetProposalStatusResult {
   /**
    * Amount of reputation voted
    */
-  totalVotes: BigNumber.BigNumber;
+  totalVotes: BigNumber;
   /**
    * Number of staked tokens currently redeemable by stakers
    */
-  totalStakerStakes: BigNumber.BigNumber;
+  totalStakerStakes: BigNumber;
   /**
    * Total number of staked tokens currently redeemable by everyone
    */
-  totalStaked: BigNumber.BigNumber;
+  totalStaked: BigNumber;
   /**
    * Number of staked tokens set aside and redeemable for all voters (via the staking fee)
    */
-  totalVoterStakes: BigNumber.BigNumber;
+  totalVoterStakes: BigNumber;
 }
 
 export interface GetScoreThresholdParamsResult {
-  thresholdConstA: BigNumber.BigNumber;
+  thresholdConstA: BigNumber;
   thresholdConstB: number;
 }
 
 export interface GetStakerInfoResult {
   vote: number;
-  stake: BigNumber.BigNumber;
+  stake: BigNumber;
 }
 
 export interface StakeConfig {
   /**
    * token amount to stake on the outcome resulting in this vote, in Wei
    */
-  amount: BigNumber.BigNumber | string;
+  amount: BigNumber | string;
   /**
    * stake on behalf of this agent
    */
@@ -1073,7 +1108,7 @@ export interface VoteWithSpecifiedAmountsConfig {
   /**
    * reputation to put behind this vote, in Wei
    */
-  reputation: BigNumber.BigNumber | string;
+  reputation: BigNumber | string;
 }
 
 export interface RedeemConfig {
@@ -1193,17 +1228,6 @@ export interface GetVoterInfoConfig {
   voter: string;
 }
 
-export interface GetVoteStatusConfig {
-  /**
-   * unique hash of proposal index
-   */
-  proposalId: string;
-  /**
-   * the choice of vote. Can be 1 (YES) or 2 (NO).
-   */
-  vote: number;
-}
-
 export interface IsVotableConfig {
   /**
    * unique hash of proposal index
@@ -1287,7 +1311,7 @@ export interface GenesisProtocolExecuteProposalEventResult extends ExecutePropos
   /**
    * _executionState.toNumber() will give you a value from the enum `ExecutionState`
    */
-  _executionState: BigNumber.BigNumber;
+  _executionState: BigNumber;
 }
 
 export interface ExecutedGenesisProposal {
@@ -1296,7 +1320,7 @@ export interface ExecutedGenesisProposal {
   /**
    * total reputation in the DAO at the time the proposal is created in the voting machine
    */
-  totalReputation: BigNumber.BigNumber;
+  totalReputation: BigNumber;
   executionState: ExecutionState;
 }
 
@@ -1326,3 +1350,40 @@ export const GetDefaultGenesisProtocolParameters = async (): Promise<GenesisProt
     votersReputationLossRatio: 1,
   };
 };
+
+export interface GenesisProtocolProposal {
+  avatarAddress: Address;
+  /**
+   * in seconds
+   */
+  boostedPhaseTime: number;
+  /**
+   * in seconds
+   */
+  currentBoostedVotePeriodLimit: number;
+  executable: Address;
+  lostReputation: BigNumber;
+  numOfChoices: number;
+  paramsHash: Hash;
+  proposalId: Hash;
+  proposer: Address;
+  state: ProposalState;
+  /**
+   * in seconds
+   */
+  submittedTime: number;
+  totalVotes: BigNumber;
+  votersStakes: BigNumber;
+  winningVote: number;
+}
+
+export interface GetExecutedProposalsConfig {
+  /**
+   * The avatar under which the proposals were created
+   */
+  avatar: Address;
+  /**
+   * Optionally filter on the given proposalId
+   */
+  proposalId?: Hash;
+}
