@@ -4,7 +4,6 @@ import {
   Address,
   BinaryVoteResult,
   DefaultSchemePermissions,
-  fnVoid,
   GetVoteStatusConfig,
   Hash,
   SchemePermissions,
@@ -16,8 +15,7 @@ import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
   ArcTransactionResult,
-  ContractWrapperBase,
-  DecodedLogEntryEvent,
+  ContractWrapperBase
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
@@ -690,22 +688,14 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   }
 
   /**
-   * Use proposalService to work with proposals creating used GenesisProtocol.
-   *
-   * For example:
-   *
-   * `const proposals = await wrapper.getProposals({avatar: anAddress});`
-   *
-   * or:
-   *
-   * `const proposal = await wrapper.getProposal({avatar: anAddress, proposalId: proposalHash });`
+   * Use proposalService to work with proposals creating used this ContributionReward.
    */
   public get proposalService(): ProposalService<GenesisProtocolProposal> {
     return new ProposalService<GenesisProtocolProposal>({
       contract: this.contract,
       convertToProposal:
-        (proposalParams: Array<any>, proposalHash: string): GenesisProtocolProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, proposalHash),
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): GenesisProtocolProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
       getProposal:
         (options: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(options.proposalId),
       proposalsEventFetcher: this.NewProposal,
@@ -720,37 +710,32 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
     options: GetExecutedProposalsConfig = {} as GetExecutedProposalsConfig)
     : Promise<Array<ExecutedGenesisProposal>> {
 
-    const defaults = {
-      proposalId: null,
-    };
+    const proposalService =
+      new ProposalService<ExecutedGenesisProposal, GenesisProtocolExecuteProposalEventResult>({
 
-    options = Object.assign({}, defaults, options);
+        contract: this.contract,
 
-    if (!options.avatar) {
-      throw new Error("avatar address is not defined");
-    }
+        convertToProposal:
+          (
+            proposalParams: Array<any>,
+            opts: AvatarProposalSpecifier & GenesisProtocolExecuteProposalEventResult
+          ): ExecutedGenesisProposal => {
+            return {
+              decision: opts._decision.toNumber(),
+              executionState: opts._executionState.toNumber(),
+              proposalId: opts._proposalId,
+              totalReputation: opts._totalReputation,
+            };
+          },
 
-    const proposals = new Array<ExecutedGenesisProposal>();
+        getProposal:
+          (opts: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(opts.proposalId),
 
-    const eventFetcher = this.ExecuteProposal(
-      { _avatar: options.avatar, _proposalId: options.proposalId },
-      { fromBlock: 0 });
-    await new Promise((resolve: fnVoid): void => {
-      eventFetcher.get(
-        async (err: any, log: Array<DecodedLogEntryEvent<GenesisProtocolExecuteProposalEventResult>>) => {
-          for (const event of log) {
-            proposals.push({
-              decision: event.args._decision.toNumber(),
-              executionState: event.args._executionState.toNumber(),
-              proposalId: event.args._proposalId,
-              totalReputation: event.args._totalReputation,
-            });
-          }
-          resolve();
-        });
-    });
+        proposalsEventFetcher: this.ExecuteProposal,
+      });
 
-    return proposals;
+    return await proposalService.getProposals(Object.assign({ avatar: options.avatar },
+      options.proposalId ? { eventFilterConfig: options.proposalId } : undefined));
   }
 
   /**

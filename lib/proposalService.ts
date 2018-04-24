@@ -4,7 +4,7 @@ import { ArcTransactionResult, DecodedLogEntryEvent } from "./contractWrapperBas
 import { IntVoteInterface, VotingMachineService } from "./votingMachineService";
 import { EventFetcherFactory, EventFetcherFilterObject } from "./web3EventService";
 
-export class ProposalService<TProposal> {
+export class ProposalService<TProposal, TEventArgs extends EventHasPropertyId = EventHasPropertyId> {
 
   private votingMachineService: VotingMachineService;
 
@@ -13,7 +13,7 @@ export class ProposalService<TProposal> {
    * where TProposal is the type of an object that represents a proposal.
    * @param wrapperClass Any object that implements ProposalWrapper<TProposal>.
    */
-  constructor(private wrapperClass: ProposalWrapper<TProposal>) {
+  constructor(private wrapperClass: ProposalWrapper<TProposal, TEventArgs>) {
     this.votingMachineService = new VotingMachineService(this.wrapperClass.contract);
   }
 
@@ -37,14 +37,16 @@ export class ProposalService<TProposal> {
 
     const eventFetcher =
       this.wrapperClass.proposalsEventFetcher({ _avatar: options.avatar }, options.eventFilterConfig);
+
     return new Promise((resolve: (proposals: Array<TProposal>) => void, reject: (err: Error) => void): void => {
-      eventFetcher.get(async (err: Error, log: Array<DecodedLogEntryEvent<any>>) => {
+      eventFetcher.get(async (err: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>) => {
         if (err) {
           return reject(err);
         }
         for (const event of log) {
           const proposalId = event.args._proposalId;
-          const proposal = await this.getProposal({ avatar: options.avatar, proposalId });
+          const proposal = await this._getProposalFromEvent(
+            Object.assign({}, event.args, { avatar: options.avatar, proposalId }));
           if (options.perProposalCallback) {
             const stop = await options.perProposalCallback(proposal);
             if (stop) {
@@ -60,11 +62,11 @@ export class ProposalService<TProposal> {
 
   /**
    * Given the options, return the promise of a proposal of type TProposal.
-   * @param options
+   * @param options In addition to properties in AvatarProposalSpecifier,
+   * options may contain extra properties to assist in proposal creation
    */
   public async getProposal(options: AvatarProposalSpecifier): Promise<TProposal> {
-    const proposalParams = await this.wrapperClass.getProposal(options);
-    return this.wrapperClass.convertToProposal(proposalParams, options.proposalId);
+    return this._getProposalFromEvent(options as AvatarProposalSpecifier & TEventArgs);
   }
 
   /**
@@ -170,6 +172,16 @@ export class ProposalService<TProposal> {
     return await this.votingMachineService.isAbstainAllow();
   }
 
+  /**
+   * Given the options, return the promise of a proposal of type TProposal.
+   * @param options In addition to properties in AvatarProposalSpecifier,
+   * options must contain TEventArgs
+   */
+  private async _getProposalFromEvent(options: AvatarProposalSpecifier & TEventArgs): Promise<TProposal> {
+    const proposalParamsArray = await this.wrapperClass.getProposal(options);
+    return this.wrapperClass.convertToProposal(proposalParamsArray, options);
+  }
+
 }
 
 export type PerProposalCallback<TProposal> = (proposal: TProposal) => void | Promise<boolean>;
@@ -199,18 +211,24 @@ export interface AvatarProposalSpecifier {
    * The desired proposalId
    */
   proposalId: Hash;
+  /**
+   * Extra properties
+   */
+  [x: string]: any;
 }
 
-export interface ProposalWrapper<TProposal> {
+export interface ProposalWrapper<TProposal, TEventArgs> {
   /**
    * Convert an array of proposal properties to an object.
+   * Options will also contain all of the event args properties.
    */
-  convertToProposal: (proposalParams: Array<any>, proposalHash: Hash) => TProposal;
+  convertToProposal: (proposalParams: Array<any>, options: AvatarProposalSpecifier & TEventArgs) => TProposal;
   /**
    * Arc is inconsistent across contracts as to how to obtain a proposal, so
-   * so we ask someone else who knows the specific contract to do it for us.
+   * so we ask the caller who knows the specific contract to do it for us.
+   * Options will also contain all of the event args properties.
    */
-  getProposal: (options: AvatarProposalSpecifier) => Promise<Array<any>>;
+  getProposal: (options: AvatarProposalSpecifier & TEventArgs) => Promise<Array<any>>;
   /**
    * Event fetcher to use for fetching all proposal creation events.
    */
@@ -219,4 +237,8 @@ export interface ProposalWrapper<TProposal> {
    * Truffle contract used to talk directly to Arc contracts.
    */
   contract: HasContract & IntVoteInterface;
+}
+
+export interface EventHasPropertyId {
+  _proposalId: Hash;
 }

@@ -310,21 +310,13 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
 
   /**
    * Use proposalService to work with proposals creating used this ContributionReward.
-   *
-   * For example:
-   *
-   * `const proposals = await wrapper.getProposals({avatar: anAddress});`
-   *
-   * or:
-   *
-   * `const proposal = await wrapper.getProposal({avatar: anAddress, proposalId: proposalHash });`
    */
   public get proposalService(): ProposalService<ContributionProposal> {
     return new ProposalService<ContributionProposal>({
       contract: this.contract,
       convertToProposal:
-        (proposalParams: Array<any>, proposalHash: string): ContributionProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, proposalHash),
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): ContributionProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
       getProposal:
         (options: AvatarProposalSpecifier): Promise<Array<any>> =>
           this.contract.organizationsProposals(options.avatar, options.proposalId),
