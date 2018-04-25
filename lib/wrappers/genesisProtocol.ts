@@ -690,7 +690,7 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   /**
    * Use proposalService to work with proposals creating used this ContributionReward.
    */
-  public get proposalService(): ProposalService<GenesisProtocolProposal> {
+  public createProposalService(): ProposalService<GenesisProtocolProposal> {
     return new ProposalService<GenesisProtocolProposal>({
       contract: this.contract,
       convertToProposal:

@@ -130,7 +130,7 @@ export class UpgradeSchemeWrapper extends ContractWrapperBase implements SchemeW
   /**
    * Use proposalServiceUpgradeUpgradeScheme to work with proposals to change the upgrade scheme.
    */
-  public get proposalServiceUpgradeUpgradeScheme(): ProposalService<UpgradeSchemeProposal> {
+  public createProposalServiceUpgradeUpgradeScheme(): ProposalService<UpgradeSchemeProposal> {
     return new ProposalService<UpgradeSchemeProposal>({
       contract: this.contract,
       convertToProposal:
@@ -148,7 +148,7 @@ export class UpgradeSchemeWrapper extends ContractWrapperBase implements SchemeW
   /**
    * Use proposalServiceUpgradeController to work with proposals to change the controller.
    */
-  public get proposalServiceUpgradeController(): ProposalService<UpgradeSchemeProposal> {
+  public createProposalServiceUpgradeController(): ProposalService<UpgradeSchemeProposal> {
     return new ProposalService<UpgradeSchemeProposal>({
       contract: this.contract,
       convertToProposal:

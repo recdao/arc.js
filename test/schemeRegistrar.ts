@@ -185,7 +185,7 @@ describe("SchemeRegistrar", () => {
     const proposalToAddId = result.proposalId;
 
     const proposalsNew =
-      await schemeRegistrar.proposalServiceNewSchemes.getProposals({ avatarAddress: dao.avatar.address });
+      await schemeRegistrar.createProposalServiceNewSchemes().getProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposalsNew.length, 1, "Should have found 1 proposals");
     assert(proposalsNew[0].proposalId === proposalToAddId, "proposalToAddId not found");
@@ -193,7 +193,7 @@ describe("SchemeRegistrar", () => {
     assert.equal(proposalsNew[0].permissions, DefaultSchemePermissions.ContributionReward);
 
     const proposalsRemove =
-      await schemeRegistrar.proposalServiceRemoveSchemes.getProposals({ avatarAddress: dao.avatar.address });
+      await schemeRegistrar.createProposalServiceRemoveSchemes().getProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposalsRemove.length, 1, "Should have found 1 proposals");
     assert(proposalsRemove[0].proposalId === proposalToRemoveId, "proposalToRemoveId not found");

@@ -311,7 +311,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
   /**
    * Use proposalService to work with ContributionReward proposals.
    */
-  public get proposalService(): ProposalService<ContributionProposal> {
+  public createProposalService(): ProposalService<ContributionProposal> {
     return new ProposalService<ContributionProposal>({
       contract: this.contract,
       convertToProposal:
@@ -351,7 +351,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
       throw new Error("beneficiaryAddress is not defined");
     }
 
-    const proposals = await this.proposalService.getProposals({
+    const proposals = await this.createProposalService().getProposals({
       avatarAddress: options.avatar,
     });
 

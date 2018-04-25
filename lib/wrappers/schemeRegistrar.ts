@@ -163,7 +163,7 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
   /**
    * Use proposalServiceNewSchemes to work with proposals to add schemes.
    */
-  public get proposalServiceNewSchemes(): ProposalService<SchemeRegistrarProposal> {
+  public createProposalServiceNewSchemes(): ProposalService<SchemeRegistrarProposal> {
     return new ProposalService<SchemeRegistrarProposal>({
       contract: this.contract,
       convertToProposal:
@@ -181,7 +181,7 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
   /**
    * Use proposalServiceRemoveSchemes to work with proposals to add schemes.
    */
-  public get proposalServiceRemoveSchemes(): ProposalService<SchemeRegistrarProposal> {
+  public createProposalServiceRemoveSchemes(): ProposalService<SchemeRegistrarProposal> {
     return new ProposalService<SchemeRegistrarProposal>({
       contract: this.contract,
       convertToProposal:
