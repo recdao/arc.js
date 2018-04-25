@@ -7,6 +7,7 @@ import {
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { EventFetcherFactory } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
@@ -71,7 +72,7 @@ export class GlobalConstraintRegistrarWrapper extends ContractWrapperBase implem
       throw new Error("avatar address is not defined");
     }
 
-    if (!options.globalConstraint) {
+    if (!options.globalConstraintAddress) {
       throw new Error("avatar globalConstraint is not defined");
     }
 
@@ -83,11 +84,49 @@ export class GlobalConstraintRegistrarWrapper extends ContractWrapperBase implem
       () => {
         return this.contract.proposeToRemoveGC(
           options.avatar,
-          options.globalConstraint
+          options.globalConstraintAddress
         );
       });
 
     return new ArcTransactionProposalResult(txResult.tx);
+  }
+
+  /**
+   * Use proposalService to work with proposals to add global constraints.
+   */
+  public createProposalServiceAddConstraint(): ProposalService<GlobalConstraintProposal> {
+    return new ProposalService<GlobalConstraintProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): GlobalConstraintProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        async (options: AvatarProposalSpecifier): Promise<Array<any>> => {
+          const data = await this.contract.organizationsData(options.avatarAddress);
+          return data.proposals(options.proposalId);
+        },
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.NewGlobalConstraintsProposal,
+    });
+  }
+
+  /**
+   * Use proposalService to work with proposals to remove global constraints.
+   */
+  public createProposalServiceRemoveConstraint(): ProposalService<GlobalConstraintProposal> {
+    return new ProposalService<GlobalConstraintProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): GlobalConstraintProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        async (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          (await this.contract.organizationsData(options.avatarAddress)).proposals(options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.RemoveGlobalConstraintsProposal,
+    });
   }
 
   public async setParameters(params: StandardSchemeParams): Promise<ArcTransactionDataResult<Hash>> {
@@ -119,6 +158,20 @@ export class GlobalConstraintRegistrarWrapper extends ContractWrapperBase implem
     return {
       voteParametersHash: params[0],
       votingMachineAddress: params[1],
+    };
+  }
+
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  }
+
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): GlobalConstraintProposal {
+    return {
+      constraintAddress: propsArray[0],
+      paramsHash: propsArray[1],
+      proposalId,
+      proposalType: propsArray[2].toNumber(),
+      voteToRemoveParamsHash: propsArray[3],
     };
   }
 }
@@ -187,5 +240,33 @@ export interface ProposeToRemoveGlobalConstraintParams {
   /**
    *  the address of the global constraint to remove
    */
-  globalConstraint: string;
+  globalConstraintAddress: Address;
+}
+
+export enum GlobalConstraintProposalType {
+  Add = 1,
+  Remove = 2,
+}
+
+export interface GlobalConstraintProposal {
+  /**
+   * Address of the global constraint
+   */
+  constraintAddress: Address;
+  /**
+   * The global constraint's parameters
+   */
+  paramsHash: Hash;
+  /**
+   * Hash of the proposalId
+   */
+  proposalId: Hash;
+  /**
+   * Add or Remove
+   */
+  proposalType: GlobalConstraintProposalType;
+  /**
+   * Hash of voting machine parameters to use when removing a global constraint
+   */
+  voteToRemoveParamsHash: Hash;
 }

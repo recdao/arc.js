@@ -345,7 +345,7 @@ describe("DAO", () => {
 
     result = await globalConstraintRegistrar.proposeToRemoveGlobalConstraint({
       avatar: dao.avatar.address,
-      globalConstraint: tokenCapGC.address,
+      globalConstraintAddress: tokenCapGC.address,
     });
 
     proposalId = result.proposalId;

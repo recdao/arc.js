@@ -50,9 +50,41 @@ describe("UpgradeScheme", () => {
 
     const proposalId = result.proposalId;
 
-    const proposalService = upgradeScheme.createProposalServiceUpgradeUpgradeScheme;
+    const proposalService = upgradeScheme.createProposalServiceUpgradeUpgradeScheme();
 
-    const proposals = await proposalService().getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
+
+    assert.equal(proposals.length, 1);
+
+    const proposal = proposals[0];
+    assert.equal(proposal.proposalId, proposalId);
+  });
+
+  it("can get upgraded Controllers", async () => {
+
+    const dao = await helpers.forgeDao();
+
+    const upgradeScheme =
+      await helpers.getDaoScheme(dao, "UpgradeScheme", UpgradeSchemeFactory) as UpgradeSchemeWrapper;
+
+    const newController = await Controller.new(avatar.address);
+
+    assert.equal(
+      await dao.controller.newControllers(dao.avatar.address),
+      helpers.NULL_ADDRESS,
+      "there is already a new controller"
+    );
+
+    const result = await upgradeScheme.proposeController({
+      avatar: dao.avatar.address,
+      controller: newController.address,
+    });
+
+    const proposalId = result.proposalId;
+
+    const proposalService = upgradeScheme.createProposalServiceUpgradeController();
+
+    const proposals = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 1);
 
