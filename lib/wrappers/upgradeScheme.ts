@@ -8,6 +8,7 @@ import {
 } from "../contractWrapperBase";
 
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { EventFetcherFactory } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
@@ -101,7 +102,11 @@ export class UpgradeSchemeWrapper extends ContractWrapperBase implements SchemeW
     );
   }
 
-  public getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions {
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  }
+
+  public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.UpgradeScheme);
     return (overrideValue || DefaultSchemePermissions.UpgradeScheme) as SchemePermissions;
   }
@@ -119,6 +124,51 @@ export class UpgradeSchemeWrapper extends ContractWrapperBase implements SchemeW
     return {
       voteParametersHash: params[0],
       votingMachineAddress: params[1],
+    };
+  }
+
+  /**
+   * Use proposalServiceUpgradeUpgradeScheme to work with proposals to change the upgrade scheme.
+   */
+  public get proposalServiceUpgradeUpgradeScheme(): ProposalService<UpgradeSchemeProposal> {
+    return new ProposalService<UpgradeSchemeProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): UpgradeSchemeProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.ChangeUpgradeSchemeProposal,
+    });
+  }
+
+  /**
+   * Use proposalServiceUpgradeController to work with proposals to change the controller.
+   */
+  public get proposalServiceUpgradeController(): ProposalService<UpgradeSchemeProposal> {
+    return new ProposalService<UpgradeSchemeProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): UpgradeSchemeProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.NewUpgradeProposal,
+    });
+  }
+
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): UpgradeSchemeProposal {
+    return {
+      paramsUpgradingScheme: propsArray[1],
+      proposalId,
+      proposalType: propsArray[2].toNumber(),
+      upgradeContractAddress: propsArray[0],
     };
   }
 }
@@ -182,4 +232,19 @@ export interface ProposeControllerParams {
    *  controller address
    */
   controller: string;
+}
+
+export enum UpgradeSchemeProposalType {
+  Controller = 1,
+  UpgradeScheme = 2,
+}
+
+export interface UpgradeSchemeProposal {
+  /**
+   * Either a controller or an upgrade scheme.
+   */
+  upgradeContractAddress: Address;
+  paramsUpgradingScheme: Hash;
+  proposalType: UpgradeSchemeProposalType;
+  proposalId: Hash;
 }

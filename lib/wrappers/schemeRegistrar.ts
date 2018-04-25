@@ -7,6 +7,7 @@ import {
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { EventFetcherFactory } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
@@ -26,16 +27,6 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
   public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
   /* tslint:enable:max-line-length */
 
-  /**
-   * Note relating to permissions: According rules defined in the Controller,
-   * this SchemeRegistrar is only capable of registering schemes that have
-   * either no permissions or have the permission to register other schemes.
-   * Therefore Arc's SchemeRegistrar is not capable of registering schemes
-   * that have permissions greater than its own, thus excluding schemes having
-   * the permission to add/remove global constraints or upgrade the controller.
-   * The Controller will throw an exception when an attempt is made
-   * to add or remove schemes having greater permissions than the scheme attempting the change.
-   */
   public async proposeToAddModifyScheme(
     options: ProposeToAddModifySchemeParams = {} as ProposeToAddModifySchemeParams)
     : Promise<ArcTransactionProposalResult> {
@@ -66,13 +57,13 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
     /**
      * throws an Error if not valid, yields 0 if null or undefined
      */
-    let permissions: SchemePermissions | DefaultSchemePermissions;
+    let permissions: SchemePermissions;
 
     if (options.schemeName) {
       /**
        * then we are adding/removing an Arc scheme and can get and check its permissions.
        */
-      permissions = options.permissions || DefaultSchemePermissions[options.schemeName];
+      permissions = options.permissions || SchemePermissions[options.schemeName];
 
       if (permissions > this.getDefaultPermissions()) {
         throw new Error(
@@ -143,7 +134,11 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
     );
   }
 
-  public getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions {
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  }
+
+  public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.SchemeRegistrar);
     return (overrideValue || DefaultSchemePermissions.SchemeRegistrar) as SchemePermissions;
   }
@@ -162,6 +157,52 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
       voteParametersHash: params[0],
       voteRemoveParametersHash: params[1],
       votingMachineAddress: params[2],
+    };
+  }
+
+  /**
+   * Use proposalServiceNewSchemes to work with proposals to add schemes.
+   */
+  public get proposalServiceNewSchemes(): ProposalService<SchemeRegistrarProposal> {
+    return new ProposalService<SchemeRegistrarProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): SchemeRegistrarProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.NewSchemeProposal,
+    });
+  }
+
+  /**
+   * Use proposalServiceRemoveSchemes to work with proposals to add schemes.
+   */
+  public get proposalServiceRemoveSchemes(): ProposalService<SchemeRegistrarProposal> {
+    return new ProposalService<SchemeRegistrarProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): SchemeRegistrarProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.RemoveSchemeProposal,
+    });
+  }
+
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): SchemeRegistrarProposal {
+    return {
+      parametersHash: propsArray[1],
+      permissions: SchemePermissions.fromString(propsArray[3]),
+      proposalId,
+      proposalType: propsArray[2].toNumber(),
+      schemeAddress: propsArray[0],
     };
   }
 }
@@ -230,7 +271,7 @@ export interface ProposeToAddModifySchemeParams {
    * For Arc schemes the default is taken from DefaultSchemePermissions
    * for the scheme given by schemeName.
    */
-  permissions?: SchemePermissions | DefaultSchemePermissions | null;
+  permissions?: SchemePermissions | null;
 }
 
 export interface ProposeToRemoveSchemeParams {
@@ -252,4 +293,17 @@ export interface SchemeRegistrarParams extends StandardSchemeParams {
    * Default is the value of voteParametersHash.
    */
   voteRemoveParametersHash?: Hash;
+}
+
+export enum SchemeRegistrarProposalType {
+  Add = 1,
+  Remove = 2,
+}
+
+export interface SchemeRegistrarProposal {
+  schemeAddress: Address;
+  parametersHash: Hash;
+  proposalType: SchemeRegistrarProposalType;
+  permissions: SchemePermissions;
+  proposalId: Hash;
 }

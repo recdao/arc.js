@@ -3,7 +3,7 @@ import abi = require("ethereumjs-abi");
 import TruffleContract = require("truffle-contract");
 import { providers as Web3Providers, Web3 } from "web3";
 import { gasLimitsConfig } from "../gasLimits.js";
-import { Address, DefaultSchemePermissions, Hash, SchemePermissions } from "./commonTypes";
+import { Address, Hash, SchemePermissions } from "./commonTypes";
 import { ConfigService } from "./configService";
 import { TransactionReceiptTruffle } from "./contractWrapperBase";
 import { LoggingService } from "./loggingService";
@@ -245,7 +245,7 @@ export class Utils {
    * @param {Number} permissions
    */
   public static numberToPermissionsString(
-    permissions: SchemePermissions | DefaultSchemePermissions): string {
+    permissions: SchemePermissions): string {
 
     if (!permissions) { permissions = SchemePermissions.None; }
 

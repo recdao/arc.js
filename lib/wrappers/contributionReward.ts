@@ -309,7 +309,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
   }
 
   /**
-   * Use proposalService to work with proposals creating used this ContributionReward.
+   * Use proposalService to work with ContributionReward proposals.
    */
   public get proposalService(): ProposalService<ContributionProposal> {
     return new ProposalService<ContributionProposal>({
@@ -319,7 +319,9 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
           this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
       getProposal:
         (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsProposals(options.avatar, options.proposalId),
+          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
       proposalsEventFetcher: this.NewContributionProposal,
     });
   }
@@ -349,7 +351,9 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
       throw new Error("beneficiaryAddress is not defined");
     }
 
-    const proposals = await this.proposalService.getProposals(options);
+    const proposals = await this.proposalService.getProposals({
+      avatarAddress: options.avatar,
+    });
 
     const rewardsArray = new Array<ProposalRewards>();
 
@@ -395,7 +399,11 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
     );
   }
 
-  public getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions {
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  }
+
+  public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.ContributionReward);
     return (overrideValue || DefaultSchemePermissions.ContributionReward) as SchemePermissions;
   }
@@ -435,19 +443,19 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
     proposalRewards[`${rewardName}Redeemable`] = amountRedeemable;
   }
 
-  private convertProposalPropsArrayToObject(orgProposal: Array<any>, proposalId: Hash): ContributionProposal {
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): ContributionProposal {
     return {
-      beneficiaryAddress: orgProposal[6],
-      contributionDescriptionHash: orgProposal[9],
-      ethReward: orgProposal[3],
-      executionTime: orgProposal[9],
-      externalToken: orgProposal[4],
-      externalTokenReward: orgProposal[5],
-      nativeTokenReward: orgProposal[1],
-      numberOfPeriods: orgProposal[8],
-      periodLength: orgProposal[7],
+      beneficiaryAddress: propsArray[6],
+      contributionDescriptionHash: propsArray[9],
+      ethReward: propsArray[3],
+      executionTime: propsArray[9],
+      externalToken: propsArray[4],
+      externalTokenReward: propsArray[5],
+      nativeTokenReward: propsArray[1],
+      numberOfPeriods: propsArray[8],
+      periodLength: propsArray[7],
       proposalId,
-      reputationChange: orgProposal[2],
+      reputationChange: propsArray[2],
     };
   }
 }

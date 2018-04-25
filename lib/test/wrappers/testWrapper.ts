@@ -35,8 +35,7 @@ export class TestWrapperWrapper extends ContractWrapperBase {
     );
   }
 
-  public getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions {
-    // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.MinimumPermissions);
+  public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     return (overrideValue || DefaultSchemePermissions.MinimumPermissions) as SchemePermissions;
   }
 }

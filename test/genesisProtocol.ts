@@ -96,8 +96,7 @@ describe("GenesisProtocol", () => {
     proposals = await genesisProtocol.getExecutedDaoProposals({ avatar: dao.avatar.address, proposalId: proposalId2 });
 
     assert.equal(proposals.length, 1, "Should have found 1 proposals");
-    assert(proposals.filter((p: ExecutedGenesisProposal) => p.proposalId === proposalId2).length,
-      "proposalId2 not found");
+    assert(proposals[0].proposalId === proposalId2, "proposalId2 not found");
     assert.isOk(proposals[0].totalReputation, "totalReputation not set properly on proposal");
     assert.equal(proposals[0].decision, 1, "decision is wrong");
   });

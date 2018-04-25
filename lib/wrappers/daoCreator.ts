@@ -2,7 +2,7 @@
 import * as BigNumber from "bignumber.js";
 import { computeGasLimit } from "../../gasLimits.js";
 import { AvatarService } from "../avatarService";
-import { Address, DefaultSchemePermissions, SchemePermissions } from "../commonTypes";
+import { Address, SchemePermissions } from "../commonTypes";
 import { ConfigService } from "../configService";
 import {
   ArcTransactionResult,
@@ -409,7 +409,7 @@ export interface SchemeConfig {
    * See ContractWrapperBase.getDefaultPermissions for what this string
    * should look like.
    */
-  permissions?: SchemePermissions | DefaultSchemePermissions;
+  permissions?: SchemePermissions;
   /**
    * Optional votingMachine parameters if you have not supplied them in ForgeOrgConfig or want to override them.
    * Note it costs more gas to add them here.

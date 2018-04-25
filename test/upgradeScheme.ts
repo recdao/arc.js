@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import { BinaryVoteResult } from "../lib";
 import { Utils } from "../lib/utils";
 import { UpgradeSchemeFactory, UpgradeSchemeWrapper } from "../lib/wrappers/upgradeScheme";
 import * as helpers from "./helpers";
@@ -21,6 +22,42 @@ describe("UpgradeScheme", () => {
     // set up a reputation system
     const reputation = await Reputation.new();
     avatar = await Avatar.new("name", token.address, reputation.address);
+  });
+
+  it("can get upgraded UpgradeSchemes", async () => {
+
+    const dao = await helpers.forgeDao();
+
+    const upgradeScheme =
+      await helpers.getDaoScheme(dao, "UpgradeScheme", UpgradeSchemeFactory) as UpgradeSchemeWrapper;
+
+    const newUpgradeScheme = await UpgradeSchemeFactory.new();
+
+    assert.isFalse(
+      await dao.isSchemeRegistered(newUpgradeScheme.address),
+      "new scheme is already registered into the controller"
+    );
+    assert.isTrue(
+      await dao.isSchemeRegistered(upgradeScheme.address),
+      "original scheme is not registered into the controller"
+    );
+
+    const result = await upgradeScheme.proposeUpgradingScheme({
+      avatar: dao.avatar.address,
+      scheme: newUpgradeScheme.address,
+      schemeParametersHash: await dao.controller.getSchemeParameters(upgradeScheme.address, dao.avatar.address),
+    });
+
+    const proposalId = result.proposalId;
+
+    const proposalService = upgradeScheme.proposalServiceUpgradeUpgradeScheme;
+
+    const proposals = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
+
+    assert.equal(proposals.length, 1);
+
+    const proposal = proposals[0];
+    assert.equal(proposal.proposalId, proposalId);
   });
 
   it("proposeController javascript wrapper should change controller", async () => {

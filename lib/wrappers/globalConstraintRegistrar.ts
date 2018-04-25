@@ -101,7 +101,7 @@ export class GlobalConstraintRegistrarWrapper extends ContractWrapperBase implem
     );
   }
 
-  public getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions {
+  public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.GlobalConstraintRegistrar);
     return (overrideValue || DefaultSchemePermissions.GlobalConstraintRegistrar) as SchemePermissions;
   }

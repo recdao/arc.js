@@ -698,6 +698,8 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
           this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
       getProposal:
         (options: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
       proposalsEventFetcher: this.NewProposal,
     });
   }
@@ -714,7 +716,6 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
       new ProposalService<ExecutedGenesisProposal, GenesisProtocolExecuteProposalEventResult>({
 
         contract: this.contract,
-
         convertToProposal:
           (
             proposalParams: Array<any>,
@@ -727,15 +728,15 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
               totalReputation: opts._totalReputation,
             };
           },
-
         getProposal:
           (opts: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(opts.proposalId),
-
+        getVotingMachineAddress:
+          (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
         proposalsEventFetcher: this.ExecuteProposal,
       });
 
     return await proposalService.getProposals(Object.assign({ avatar: options.avatar },
-      options.proposalId ? { eventFilterConfig: options.proposalId } : undefined));
+      options.proposalId ? { eventArgsFilter: { _proposalId: options.proposalId } } : undefined));
   }
 
   /**
@@ -837,7 +838,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
     );
   }
 
-  public getDefaultPermissions(overrideValue?: SchemePermissions | DefaultSchemePermissions): SchemePermissions {
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return Promise.resolve(this.contract);
+  }
+
+  public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.GenesisProtocol);
     return (overrideValue || DefaultSchemePermissions.GenesisProtocol) as SchemePermissions;
   }

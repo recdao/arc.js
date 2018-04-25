@@ -205,7 +205,7 @@ describe("ContributionReward scheme", () => {
     assert(helpers.fromWei(amount).eq(10));
   });
 
-  it("can get DAO's proposals", async () => {
+  it("can get proposals", async () => {
 
     let result = await proposeReward({ nativeTokenReward: web3.toWei(10) });
 
@@ -215,14 +215,14 @@ describe("ContributionReward scheme", () => {
 
     const proposalId2 = result.proposalId;
 
-    const proposals = await scheme.proposalService.getProposals({ avatar: dao.avatar.address });
+    const proposals = await scheme.proposalService.getProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId1).length, "proposalId1 not found");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
 
-    const proposal = await scheme.proposalService.getProposal({ avatar: dao.avatar.address, proposalId: proposalId2 });
-
+    const proposal = await scheme.proposalService.getProposal(
+      { avatarAddress: dao.avatar.address, proposalId: proposalId2 });
     assert(proposal.proposalId === proposalId2, "proposalId2 not found");
     assert.equal(proposal.beneficiaryAddress, accounts[1],
       "beneficiaryAddress not set properly on proposal");
@@ -238,7 +238,7 @@ describe("ContributionReward scheme", () => {
 
     const reputationChangeProposalId = result.proposalId;
 
-    const proposals = await scheme.proposalService.getProposals({ avatar: dao.avatar.address });
+    const proposals = await scheme.proposalService.getProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === nativeRewardProposalId).length,

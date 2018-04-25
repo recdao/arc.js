@@ -172,8 +172,4 @@ export interface EventFetcherFilterObject {
    * The default is true.
    */
   suppressDups?: boolean;
-  /**
-   * filter on args properties
-   */
-  [x: string]: any;
 }
