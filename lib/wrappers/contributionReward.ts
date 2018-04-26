@@ -8,7 +8,7 @@ import {
 } from "../commonTypes";
 import { ConfigService } from "../configService";
 
-import * as BigNumber from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
@@ -485,12 +485,12 @@ export interface NewContributionProposalEventResult {
    * indexed
    */
   _proposalId: Hash;
-  _reputationChange: BigNumber.BigNumber;
-  _rewards: Array<BigNumber.BigNumber>;
+  _reputationChange: BigNumber;
+  _rewards: Array<BigNumber>;
 }
 
 export interface RedeemEtherEventResult {
-  _amount: BigNumber.BigNumber;
+  _amount: BigNumber;
   /**
    * indexed
    */
@@ -506,7 +506,7 @@ export interface RedeemEtherEventResult {
 }
 
 export interface RedeemNativeTokenEventResult {
-  _amount: BigNumber.BigNumber;
+  _amount: BigNumber;
   /**
    * indexed
    */
@@ -522,7 +522,7 @@ export interface RedeemNativeTokenEventResult {
 }
 
 export interface RedeemExternalTokenEventResult {
-  _amount: BigNumber.BigNumber;
+  _amount: BigNumber;
   /**
    * indexed
    */
@@ -541,53 +541,53 @@ export interface ContributionProposal {
   proposalId: Hash;
   beneficiaryAddress: Address;
   contributionDescriptionHash: Hash;
-  ethReward: BigNumber.BigNumber;
+  ethReward: BigNumber;
   executionTime: number;
   externalToken: Address;
-  externalTokenReward: BigNumber.BigNumber;
-  nativeTokenReward: BigNumber.BigNumber;
+  externalTokenReward: BigNumber;
+  nativeTokenReward: BigNumber;
   numberOfPeriods: number;
   periodLength: number;
-  reputationChange: BigNumber.BigNumber;
+  reputationChange: BigNumber;
 }
 
 export interface ProposalRewards {
   /**
    * The total ETH reward
    */
-  ethReward: BigNumber.BigNumber;
+  ethReward: BigNumber;
   /**
    * The total unredeemed amount of ETH
    */
-  ethRewardUnredeemed: BigNumber.BigNumber;
+  ethRewardUnredeemed: BigNumber;
   /**
    * The currently-redeemable external token reward
    */
-  ethRewardRedeemable: BigNumber.BigNumber;
+  ethRewardRedeemable: BigNumber;
   /**
    * The total external token reward
    */
-  externalTokenReward: BigNumber.BigNumber;
+  externalTokenReward: BigNumber;
   /**
    * The total unredeemed number of external tokens
    */
-  externalTokenRewardUnredeemed: BigNumber.BigNumber;
+  externalTokenRewardUnredeemed: BigNumber;
   /**
    * The currently-redeemable external token reward
    */
-  externalTokenRewardRedeemable: BigNumber.BigNumber;
+  externalTokenRewardRedeemable: BigNumber;
   /**
    * The total native token reward
    */
-  nativeTokenReward: BigNumber.BigNumber;
+  nativeTokenReward: BigNumber;
   /**
    * The total unredeemed number of native tokens
    */
-  nativeTokenRewardUnredeemed: BigNumber.BigNumber;
+  nativeTokenRewardUnredeemed: BigNumber;
   /**
    * The currently-redeemable native token reward
    */
-  nativeTokenRewardRedeemable: BigNumber.BigNumber;
+  nativeTokenRewardRedeemable: BigNumber;
   /**
    * The proposal Id
    */
@@ -595,23 +595,23 @@ export interface ProposalRewards {
   /**
    * The total reputation reward
    */
-  reputationChange: BigNumber.BigNumber;
+  reputationChange: BigNumber;
   /**
    * The total unredeemed amount of reputation
    */
-  reputationChangeUnredeemed: BigNumber.BigNumber;
+  reputationChangeUnredeemed: BigNumber;
   /**
    * The currently-redeemable reputation reward
    */
-  reputationChangeRedeemable: BigNumber.BigNumber;
+  reputationChangeRedeemable: BigNumber;
 }
 
 export interface ContributionRewardParams extends StandardSchemeParams {
-  orgNativeTokenFee: BigNumber.BigNumber | string;
+  orgNativeTokenFee: BigNumber | string;
 }
 
 export interface ContributionRewardParamsReturn extends StandardSchemeParams {
-  orgNativeTokenFee: BigNumber.BigNumber;
+  orgNativeTokenFee: BigNumber;
 }
 
 export interface ContributionRewardSpecifiedRedemptionParams {
@@ -653,25 +653,25 @@ export interface ProposeContributionRewardParams {
    * Amount of reputation change requested, per period.
    * Can be negative.  In Wei. Default is 0;
    */
-  reputationChange?: BigNumber.BigNumber | string;
+  reputationChange?: BigNumber | string;
   /**
    * Reward in tokens per period, in the DAO's native token.
    * Must be >= 0.
    * In Wei. Default is 0;
    */
-  nativeTokenReward?: BigNumber.BigNumber | string;
+  nativeTokenReward?: BigNumber | string;
   /**
    * Reward per period, in ethers.
    * Must be >= 0.
    * In Wei. Default is 0;
    */
-  ethReward?: BigNumber.BigNumber | string;
+  ethReward?: BigNumber | string;
   /**
    * Reward per period in the given external token.
    * Must be >= 0.
    * In Wei. Default is 0;
    */
-  externalTokenReward?: BigNumber.BigNumber | string;
+  externalTokenReward?: BigNumber | string;
   /**
    * The number of blocks in a period.
    * Must be > 0.

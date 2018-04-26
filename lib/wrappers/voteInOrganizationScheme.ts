@@ -1,4 +1,5 @@
 "use strict";
+import { BigNumber } from "bignumber.js";
 import { Address, DefaultSchemePermissions, Hash, SchemePermissions, SchemeWrapper } from "../commonTypes";
 import {
   ArcTransactionDataResult,
@@ -7,6 +8,7 @@ import {
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { EventFetcherFactory } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
@@ -20,6 +22,7 @@ export class VoteInOrganizationSchemeWrapper extends ContractWrapperBase impleme
    */
 
   /* tslint:disable:max-line-length */
+  public NewVoteProposal: EventFetcherFactory<NewVoteProposalEventResult> = this.createEventFetcherFactory<NewVoteProposalEventResult>("NewVoteProposal");
   public ProposalExecuted: EventFetcherFactory<ProposalExecutedEventResult> = this.createEventFetcherFactory<ProposalExecutedEventResult>("ProposalExecuted");
   public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
   public VoteOnBehalf: EventFetcherFactory<VoteOnBehalfEventResult> = this.createEventFetcherFactory<VoteOnBehalfEventResult>("VoteOnBehalf");
@@ -56,6 +59,28 @@ export class VoteInOrganizationSchemeWrapper extends ContractWrapperBase impleme
     return new ArcTransactionProposalResult(txResult.tx);
   }
 
+  /**
+   * Use proposalService to work with VoteInOrganizationScheme proposals.
+   */
+  public createProposalService(): ProposalService<VoteInOrganizationProposal> {
+    return new ProposalService<VoteInOrganizationProposal>({
+      contract: this.contract,
+      convertToProposal:
+        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): VoteInOrganizationProposal =>
+          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
+      getProposal:
+        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
+          this.contract.organizationsData(options.avatarAddress, options.proposalId),
+      getVotingMachineAddress:
+        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
+      proposalsEventFetcher: this.NewVoteProposal,
+    });
+  }
+
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  }
+
   public async setParameters(params: StandardSchemeParams): Promise<ArcTransactionDataResult<Hash>> {
 
     this.validateStandardSchemeParams(params);
@@ -87,6 +112,15 @@ export class VoteInOrganizationSchemeWrapper extends ContractWrapperBase impleme
       votingMachineAddress: params[0],
     };
   }
+
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VoteInOrganizationProposal {
+    return {
+      originalIntVote: propsArray[0],
+      originalNumOfChoices: propsArray[2].toNumber(),
+      originalProposalId: propsArray[1],
+      proposalId,
+    };
+  }
 }
 
 export const VoteInOrganizationSchemeFactory = new ContractWrapperFactory(
@@ -110,4 +144,29 @@ export interface VoteInOrganizationProposeVoteConfig {
    * Address of the "original" proposal for which the DAO's vote will cast.
    */
   originalProposalId: string;
+}
+
+export interface VoteInOrganizationProposal {
+  originalIntVote: Address;
+  originalNumOfChoices: number;
+  originalProposalId: Hash;
+  proposalId: Hash;
+}
+
+export interface NewVoteProposalEventResult {
+  /**
+   * indexed
+   */
+  _avatar: Address;
+  /**
+   * indexed
+   */
+  _intVoteInterface: Address;
+  _originalIntVote: Address;
+  _originalProposalId: Hash;
+  _originalNumOfChoices: BigNumber;
+  /**
+   * indexed
+   */
+  _proposalId: Hash;
 }

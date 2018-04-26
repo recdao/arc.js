@@ -1,8 +1,8 @@
-import * as BigNumber from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 import { Address, Hash } from "../commonTypes";
 
 export interface NewProposalEventResult {
-  _numOfChoices: number;
+  _numOfChoices: BigNumber;
   _paramsHash: Hash;
   /**
    * indexed
@@ -15,7 +15,7 @@ export interface NewProposalEventResult {
  * fired by voting machines
  */
 export interface ExecuteProposalEventResult {
-  _decision: BigNumber.BigNumber;
+  _decision: BigNumber;
   /**
    * indexed
    */
@@ -23,7 +23,7 @@ export interface ExecuteProposalEventResult {
   /**
    * total reputation in the DAO at the time the proposal is created in the voting machine
    */
-  _totalReputation: BigNumber.BigNumber;
+  _totalReputation: BigNumber;
 }
 
 export interface VoteProposalEventResult {
@@ -31,7 +31,10 @@ export interface VoteProposalEventResult {
    * indexed
    */
   _proposalId: Hash;
-  _reputation: BigNumber.BigNumber;
+  _reputation: BigNumber;
+  /**
+   * The choice of vote
+   */
   _vote: number;
   /**
    * indexed
@@ -40,7 +43,7 @@ export interface VoteProposalEventResult {
 }
 
 export interface RedeemReputationEventResult {
-  _amount: BigNumber.BigNumber;
+  _amount: BigNumber;
   /**
    * indexed
    */

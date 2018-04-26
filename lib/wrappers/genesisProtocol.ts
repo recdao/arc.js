@@ -716,6 +716,11 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
       new ProposalService<ExecutedGenesisProposal, GenesisProtocolExecuteProposalEventResult>({
 
         contract: this.contract,
+        /**
+         * this doesn't convert to a GenesisProtocolProposal, rather it converts to a
+         * ExecutedGenesisProposal which contains a different set of information than the straight
+         * GenesisProtocolProposal.
+         */
         convertToProposal:
           (
             proposalParams: Array<any>,
@@ -887,7 +892,7 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
       currentBoostedVotePeriodLimit: proposalArray[12],
       executable: proposalArray[2],
       lostReputation: proposalArray[5],
-      numOfChoices: proposalArray[1],
+      numOfChoices: proposalArray[1].toNumber(),
       paramsHash: proposalArray[13],
       proposalId,
       proposer: proposalArray[11],

@@ -27,12 +27,8 @@ export class ProposalService<TProposal, TEventArgs extends EventHasPropertyId = 
    */
   public async getProposals(options: GetProposalsOptions<TProposal>): Promise<Array<TProposal>> {
 
-    const defaults = {
-      eventArgsFilter: options.avatarAddress ? { _avatar: options.avatarAddress } : {},
-      eventFilterConfig: { fromBlock: 0 },
-    };
-
-    options = Object.assign({}, defaults, options);
+    options.eventArgsFilter = Object.assign({}, options.avatarAddress ? { _avatar: options.avatarAddress } : {}, options.eventArgsFilter);
+    options.eventFilterConfig = Object.assign({}, { fromBlock: 0 }, options.eventFilterConfig);
 
     const proposals = new Array<TProposal>();
 

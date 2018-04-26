@@ -6,6 +6,7 @@ import { Utils } from "../lib/utils";
 import {
   ExecutedGenesisProposal,
   GenesisProtocolFactory,
+  GenesisProtocolProposal,
   GenesisProtocolWrapper
 } from "../lib/wrappers/genesisProtocol";
 import { SchemeRegistrarFactory, SchemeRegistrarWrapper } from "../lib/wrappers/schemeRegistrar";
@@ -77,6 +78,24 @@ describe("GenesisProtocol", () => {
     executableTest = await ExecutableTest.deployed();
   });
 
+  it("can get proposals", async () => {
+
+    const proposalId1 = await createProposal();
+
+    const proposalId2 = await createProposal();
+
+    const proposals = await genesisProtocol.createProposalService().getProposals({ avatarAddress: dao.avatar.address });
+
+    // TODO: This should be === 2.  Should be fixed in next Arc version
+    assert(proposals.length >= 2, `Should have found 2 proposals`);
+    assert(proposals.filter((p: GenesisProtocolProposal) => p.proposalId === proposalId1).length,
+      "proposalId1 not found");
+    assert(proposals.filter((p: GenesisProtocolProposal) => p.proposalId === proposalId2).length,
+      "proposalId2 not found");
+
+    assert(typeof proposals[0].numOfChoices === "number");
+  });
+
   it("can get executed proposals", async () => {
 
     const proposalId1 = await createProposal();
@@ -87,7 +106,8 @@ describe("GenesisProtocol", () => {
 
     let proposals = await genesisProtocol.getExecutedDaoProposals({ avatar: dao.avatar.address });
 
-    assert(proposals.length >= 2, "Should have found at least 2 proposals");
+    // TODO: This should be === 2.  Should be fixed in next Arc version
+    assert(proposals.length >= 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ExecutedGenesisProposal) => p.proposalId === proposalId1).length,
       "proposalId1 not found");
     assert(proposals.filter((p: ExecutedGenesisProposal) => p.proposalId === proposalId2).length,
