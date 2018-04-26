@@ -40,7 +40,7 @@ beforeEach(async () => {
   await etherForEveryone();
 });
 
-export async function forgeDao(opts: any = {}): Promise<DAO> {
+export async function forgeDao(opts: Partial<NewDaoConfig> = {}): Promise<DAO> {
   const founders = Array.isArray(opts.founders) ? opts.founders :
     [
       {

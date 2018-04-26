@@ -25,7 +25,12 @@ describe("VestingScheme scheme", () => {
         reputation: web3.toWei(1000),
         tokens: web3.toWei(1000),
       }],
-      schemes: [{ name: "VestingScheme" }],
+      schemes: [{
+        name: "VestingScheme",
+        votingMachineParams: {
+          ownerVote: false
+        }
+      }],
     });
 
     const schemeInDao = await dao.getSchemes("VestingScheme");
@@ -205,10 +210,10 @@ describe("VestingScheme scheme", () => {
     // TODO: Why is it executing???  It doesn't execute in virtually the same Arc test.
     assert.equal(tx.logs.length, 1);
     assert.equal(tx.logs[0].event, "AgreementProposal");
-    var avatarAddress = await Utils.getValueFromLogs(tx, '_avatar', "AgreementProposal", 1);
+    var avatarAddress = Utils.getValueFromLogs(tx, '_avatar', "AgreementProposal", 1);
     assert.equal(avatarAddress, dao.avatar.address);
 
-    var proposalId = await Utils.getValueFromLogs(tx, '_proposalId', "AgreementProposal", 1);
+    var proposalId = Utils.getValueFromLogs(tx, '_proposalId', "AgreementProposal", 1);
     var organizationsData = await vestingScheme.contract.organizationsData(dao.avatar.address, proposalId);
     assert.equal(organizationsData[0], dao.token.address);
     assert.equal(organizationsData[1], accounts[0]); //beneficiary

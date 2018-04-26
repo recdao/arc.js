@@ -71,7 +71,19 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
 
     const totalGas = computeGasLimit(options.founders.length);
 
-    this.logContractFunctionCall("DaoCreator.forgeOrg", options);
+    this.logContractFunctionCall("DaoCreator.forgeOrg (options)", options);
+
+    this.logContractFunctionCall("DaoCreator.forgeOrg", {
+      name: options.name,
+      tokenName: options.tokenName,
+      v: options.tokenSymbol,
+      founAddresses: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.address)),
+      founderTokens: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.tokens)),
+      founderReputation: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.reputation)),
+      controllerAddress,
+      topkenCap: options.tokenCap,
+      gas: { gas: totalGas }
+    });
 
     return this.wrapTransactionInvocation("DaoCreator.forgeOrg",
       options,
@@ -253,7 +265,15 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
         initialSchemesPermissions.push(SchemePermissions.toString(requiredPermissions | additionalPermissions));
       }
 
-      this.logContractFunctionCall("DaoCreator.setSchemes", options);
+      this.logContractFunctionCall("DaoCreator.setSchemes (options)", options);
+
+      this.logContractFunctionCall("DaoCreator.setSchemes",
+        {
+          avatar: options.avatar,
+          initialSchemesSchemes,
+          initialSchemesParams,
+          initialSchemesPermissions
+        });
 
       // register the schemes with the dao
       tx = await this.contract.setSchemes(

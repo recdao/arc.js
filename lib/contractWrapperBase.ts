@@ -223,7 +223,7 @@ export abstract class ContractWrapperBase implements HasContract {
   }
 
   protected logContractFunctionCall(functionName: string, params?: any): void {
-    LoggingService.debug(`calling ${functionName}${params ? ` with: ${LoggingService.stringifyObject(params)}` : ""}`);
+    LoggingService.debug(`${functionName}: ${params ? `${LoggingService.stringifyObject(params)}` : "no parameters"}`);
   }
 }
 
