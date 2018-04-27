@@ -1018,7 +1018,6 @@ export interface GenesisProtocolParams {
   votersReputationLossRatio: number;
 }
 
-
 export interface ProposeVoteConfig {
   /**
    * The DAO's avatar under which the proposal is being made.
