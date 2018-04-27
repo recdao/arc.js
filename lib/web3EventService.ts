@@ -6,31 +6,36 @@ export class Web3EventService {
    * Returns a function that creates an EventFetcher<TArgs>.
    * For subclasses to use to create their event handlers.
    * This is identical to what you get with Truffle, except that
-   * the result param of the callback is always guaranteed to be an array.
+   * the result param of the callback is always guaranteed to be an array,
+   * and duplicate events are removed.
    *
    * Example:
    *
-   *    public NewProposal = this.eventWrapperFactory<NewProposalEventResult>("NewProposal");
-   *    const event = NewProposal(...);
+   *    public NewProposal = Web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal");
+   *    const event = NewProposal({}, { fromBlock: 0 });
    *    event.get(...).
    *
    * @type TArgs - name of the event args (EventResult) interface, like NewProposalEventResult
    * @param eventName - Name of the event like "NewProposal"
+   * @param preProcessEvent - optionally supply this to modify the err and log arguments before they are
+   * passed to the `get` an `watch` callbacks.
    */
   public static createEventFetcherFactory<TArgs>(
     eventName: string,
-    contractWrapper: HasContract): EventFetcherFactory<TArgs> {
+    contractWrapper: HasContract,
+    preProcessEvent?: PreProcessEventCallback<TArgs>
+  ): EventFetcherFactory<TArgs> {
 
     /**
      * This is the function that returns the EventFetcher<TArgs>
-     * @param argFilter
-     * @param filterObject
+     * @param argFilter Optional event argument filter, like `{ _proposalId: [someHash] }`.
+     * @param filterObject Optional event filter.  Default is `{ fromBlock: "latest" }`
      * @param callback
      */
     const eventFetcherFactory: EventFetcherFactory<TArgs> = (
       argFilter: any,
       filterObject: EventFetcherFilterObject,
-      rootCallback?: EventCallback<TArgs>
+      givenCallback?: EventCallback<TArgs>
     ): EventFetcher<TArgs> => {
 
       let baseEvent: EventFetcher<TArgs>;
@@ -41,7 +46,7 @@ export class Web3EventService {
       }
 
       const handleEvent = (
-        error: any,
+        error: Error,
         log: DecodedLogEntryEvent<TArgs> | Array<DecodedLogEntryEvent<TArgs>>,
         callback?: EventCallback<TArgs>): void => {
 
@@ -67,6 +72,12 @@ export class Web3EventService {
             }
           });
         }
+
+        if (preProcessEvent) {
+          const processedResult = preProcessEvent(error, log);
+          error = processedResult.error;
+          log = processedResult.log;
+        }
         callback(error, log);
       };
 
@@ -89,20 +100,19 @@ export class Web3EventService {
         },
       };
       /**
-       * if callback is set then this will start watching immediately,
-       * otherwise caller must use `get` and `watch`
+       * if callback is defined then start watching immediately using baseWrapperCallback.
+       * Otherwise caller must use `get` and `watch` and baseWrapperCallback will be undefined as well
        */
-      const wrapperRootCallback: EventCallback<TArgs> | undefined = rootCallback ?
-        (error: any, log: DecodedLogEntryEvent<TArgs> | Array<DecodedLogEntryEvent<TArgs>>): void => {
-          if (!!error) {
-            log = [];
-          } else if (!Array.isArray(log)) {
-            log = [log];
-          }
-          rootCallback(error, log);
-        } : undefined;
+      let baseEventCallback: EventCallback<TArgs>;
 
-      baseEvent = contractWrapper.contract[eventName](argFilter, filterObject, wrapperRootCallback);
+      if (givenCallback) {
+        baseEventCallback =
+          (error: any, log: DecodedLogEntryEvent<TArgs> | Array<DecodedLogEntryEvent<TArgs>>): void => {
+            handleEvent(error, log, givenCallback);
+          };
+      }
+
+      baseEvent = contractWrapper.contract[eventName](argFilter, filterObject, baseEventCallback);
 
       return eventFetcher;
     };
@@ -111,11 +121,10 @@ export class Web3EventService {
   }
 }
 
-export type EventCallback<TArgs> =
-  (
-    err: Error,
-    log: Array<DecodedLogEntryEvent<TArgs>>
-  ) => void;
+export type EventCallback<TArgs> = (error: Error, log: Array<DecodedLogEntryEvent<TArgs>>) => void;
+export interface EventPreProcessorReturn<TArgs> { error: Error; log: Array<DecodedLogEntryEvent<TArgs>>; }
+export type PreProcessEventCallback<TArgs> =
+  (error: Error, log: Array<DecodedLogEntryEvent<TArgs>>) => EventPreProcessorReturn<TArgs>;
 
 /**
  * The generic type of every handler function that returns an event.  See this
@@ -140,10 +149,7 @@ export type EventFetcherFactory<TArgs> =
     callback?: EventCallback<TArgs>
   ) => EventFetcher<TArgs>;
 
-export type EventFetcherHandler<TArgs> =
-  (
-    callback: EventCallback<TArgs>
-  ) => void;
+export type EventFetcherHandler<TArgs> = (callback: EventCallback<TArgs>) => void;
 
 /**
  * returned by EventFetcherFactory<TArgs> which is created by eventWrapperFactory.

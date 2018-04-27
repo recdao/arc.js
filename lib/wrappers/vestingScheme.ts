@@ -323,11 +323,11 @@ export class VestingSchemeWrapper extends ContractWrapperBase implements SchemeW
       collectedPeriods: propsArray[9],
       numOfAgreedPeriods: propsArray[6],
       periodLength: propsArray[5],
+      proposalId,
       returnOnCancelAddress: propsArray[2],
       signaturesReqToCancel: propsArray[8],
       startingBlock: propsArray[3],
       tokenAddress: propsArray[0],
-      proposalId: proposalId
     };
   }
 }

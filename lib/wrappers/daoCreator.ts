@@ -74,15 +74,15 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
     this.logContractFunctionCall("DaoCreator.forgeOrg (options)", options);
 
     this.logContractFunctionCall("DaoCreator.forgeOrg", {
-      name: options.name,
-      tokenName: options.tokenName,
-      v: options.tokenSymbol,
-      founAddresses: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.address)),
-      founderTokens: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.tokens)),
-      founderReputation: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.reputation)),
       controllerAddress,
-      topkenCap: options.tokenCap,
-      gas: { gas: totalGas }
+      founderAddresses: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.address)),
+      founderReputation: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.reputation)),
+      founderTokens: options.founders.map((founder: FounderConfig) => web3.toBigNumber(founder.tokens)),
+      gas: { gas: totalGas },
+      name: options.name,
+      tokenCap: options.tokenCap,
+      tokenName: options.tokenName,
+      tokenSymbol: options.tokenSymbol,
     });
 
     return this.wrapTransactionInvocation("DaoCreator.forgeOrg",
@@ -270,9 +270,9 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
       this.logContractFunctionCall("DaoCreator.setSchemes",
         {
           avatar: options.avatar,
-          initialSchemesSchemes,
           initialSchemesParams,
-          initialSchemesPermissions
+          initialSchemesPermissions,
+          initialSchemesSchemes,
         });
 
       // register the schemes with the dao

@@ -28,8 +28,8 @@ describe("VestingScheme scheme", () => {
       schemes: [{
         name: "VestingScheme",
         votingMachineParams: {
-          ownerVote: false
-        }
+          ownerVote: false,
+        },
       }],
     });
 
@@ -65,7 +65,7 @@ describe("VestingScheme scheme", () => {
     const result2 = await vestingScheme.propose(Object.assign({ avatar: dao.avatar.address }, options));
     const proposalId2 = result2.proposalId;
 
-    let proposalService = vestingScheme.createProposalService();
+    const proposalService = vestingScheme.createProposalService();
 
     let agreements = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
 
@@ -73,7 +73,8 @@ describe("VestingScheme scheme", () => {
     assert(agreements.filter((a: Agreement) => a.proposalId === proposalId1).length, "proposalId1 not found");
     assert(agreements.filter((a: Agreement) => a.proposalId === proposalId2).length, "proposalId2 not found");
 
-    agreements = await proposalService.getProposals({ avatarAddress: dao.avatar.address, eventArgsFilter: { _proposalId: proposalId2 } });
+    agreements = await proposalService.getProposals(
+      { avatarAddress: dao.avatar.address, eventArgsFilter: { _proposalId: proposalId2 } });
 
     // TODO: this should be 1, see https://github.com/daostack/arc/issues/448
     assert.equal(agreements.length, 2, "Should have found 1 agreements");
@@ -210,13 +211,13 @@ describe("VestingScheme scheme", () => {
     // TODO: Why is it executing???  It doesn't execute in virtually the same Arc test.
     assert.equal(tx.logs.length, 1);
     assert.equal(tx.logs[0].event, "AgreementProposal");
-    var avatarAddress = Utils.getValueFromLogs(tx, '_avatar', "AgreementProposal", 1);
+    const avatarAddress = Utils.getValueFromLogs(tx, "_avatar", "AgreementProposal", 1);
     assert.equal(avatarAddress, dao.avatar.address);
 
-    var proposalId = Utils.getValueFromLogs(tx, '_proposalId', "AgreementProposal", 1);
-    var organizationsData = await vestingScheme.contract.organizationsData(dao.avatar.address, proposalId);
+    const proposalId = Utils.getValueFromLogs(tx, "_proposalId", "AgreementProposal", 1);
+    const organizationsData = await vestingScheme.contract.organizationsData(dao.avatar.address, proposalId);
     assert.equal(organizationsData[0], dao.token.address);
-    assert.equal(organizationsData[1], accounts[0]); //beneficiary
+    assert.equal(organizationsData[1], accounts[0]); // beneficiary
   });
 
   it("propose agreement fails when no period is given", async () => {
