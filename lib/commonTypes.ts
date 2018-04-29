@@ -1,4 +1,3 @@
-import { ArcTransactionResult } from "./contractWrapperBase";
 import { Utils } from "./utils";
 
 export type fnVoid = () => void;
@@ -79,11 +78,6 @@ export interface SchemeWrapper {
   getSchemeParameters(avatarAddress: Address): Promise<any>;
   getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions;
   getSchemePermissions(avatarAddress: Address): Promise<SchemePermissions>;
-}
-
-export interface VotingMachine {
-  vote(options: VoteConfig): Promise<ArcTransactionResult>;
-  voteStatus(proposalId: Hash, choice: number): Promise<Array<number>>;
 }
 
 export interface GetVoteStatusConfig {
