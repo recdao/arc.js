@@ -1,8 +1,8 @@
-import { VotingMachineService } from "./votingMachineService";
+// import { VotingMachineService } from "./votingMachineService";
 
-export abstract class ExecuteVotableProposal {
+// export abstract class ExecuteVotableProposal {
 
-  constructor(public votingMachine: VotingMachineService) {
+//   constructor(public votingMachine: VotingMachineService) {
 
-  }
-}
+//   }
+// }
