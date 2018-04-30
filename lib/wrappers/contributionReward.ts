@@ -311,15 +311,13 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
    * Returns a Promise of an EntityFetcherFactory for votable ContributionProposals.
    * @param avatarAddress
    */
-  public async getVotableProposalsFactory(avatarAddress: Address):
+  public async getVotableProposalsFactory():
     Promise<EntityFetcherFactory<ContributionProposal, NewContributionProposalEventResult>> {
 
     return this.web3EventService.createEntityFetcherFactory<ContributionProposal, NewContributionProposalEventResult>(
       this.NewContributionProposal,
       async (args: NewContributionProposalEventResult): Promise<ContributionProposal> => {
-        if (args._avatar === avatarAddress) {
-          return this.getProposal(avatarAddress, args._proposalId);
-        }
+        return this.getProposal(args._avatar, args._proposalId);
       });
   }
 
@@ -328,15 +326,13 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
    * Note that the ContributionProposals contract retains the original proposal after execution.
    * @param avatarAddress
    */
-  public async getExecutedProposalsFactory(avatarAddress: Address):
+  public async getExecutedProposalsFactory():
     Promise<EntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>> {
 
     return this.web3EventService.createEntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>(
       this.ProposalExecuted,
       async (args: ProposalExecutedEventResult): Promise<ContributionProposal> => {
-        if (args._avatar === avatarAddress) {
-          return this.getProposal(avatarAddress, args._proposalId);
-        }
+        return this.getProposal(args._avatar, args._proposalId);
       });
   }
 
@@ -366,16 +362,15 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
     }
 
     /**
-     * convert this.ProposalExecuted events to ContributionReward entities
+     * Get the factory for a `ProposalExecuted` event fetcher for the given avatar,
+     * returning ContributionReward.
      */
-    const executedProposalsFetcherFactory = await this.getExecutedProposalsFactory(options.avatar);
+    const executedProposalsFetcherFactory = await this.getExecutedProposalsFactory();
 
     /**
-     * filter by avatar and start from block 0
+     * Fetch from block 0 and the given avatar
      */
-    const proposalsFetcher = executedProposalsFetcherFactory(
-      { _avatar: options.avatar },
-      { fromBlock: 0 });
+    const proposalsFetcher = executedProposalsFetcherFactory({ _avatar: options.avatar }, { fromBlock: 0 });
 
     /**
      * get the proposals
