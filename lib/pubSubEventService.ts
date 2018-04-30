@@ -1,16 +1,16 @@
 import * as PubSub from "pubsub-js";
 import { LoggingService } from "./loggingService";
 
-export class EventService {
+export class PubSubEventService {
 
   /**
    * Send the given payload to subscribers of the given topic.
-   * @param topic See [subscribe](EventService#subscribe)
+   * @param topic See [subscribe](PubSubEventService#subscribe)
    * @param payload Sent in the subscription callback.
    * @returns True if there are any subscribers
    */
   public static publish(topic: string, payload: any): boolean {
-    LoggingService.debug(`EventService: publishing ${topic}`);
+    LoggingService.debug(`PubSubEventService: publishing ${topic}`);
     return PubSub.publish(topic, payload);
   }
 
@@ -22,7 +22,7 @@ export class EventService {
    */
   public static subscribe(topics: string | Array<string>, callback: EventSubscriptionCallback): IEventSubscription {
     return Array.isArray(topics) ?
-      EventService.aggregate(topics, callback) :
+      PubSubEventService.aggregate(topics, callback) :
       new EventSubscription(PubSub.subscribe(topics, callback));
   }
 

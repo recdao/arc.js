@@ -3,15 +3,15 @@ import { Address, DefaultSchemePermissions, Hash, SchemePermissions, SchemeWrapp
 import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
-  ContractWrapperBase,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { ProposalGeneratorBase } from "../proposalGeneratorBase";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
-export class GlobalConstraintRegistrarWrapper extends ContractWrapperBase implements SchemeWrapper {
+export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
   public name: string = "GlobalConstraintRegistrar";
   public friendlyName: string = "Global Constraint Registrar";
@@ -177,7 +177,7 @@ export class GlobalConstraintRegistrarWrapper extends ContractWrapperBase implem
 }
 
 export const GlobalConstraintRegistrarFactory = new ContractWrapperFactory(
-  "GlobalConstraintRegistrar", GlobalConstraintRegistrarWrapper);
+  "GlobalConstraintRegistrar", GlobalConstraintRegistrarWrapper, new Web3EventService());
 
 export interface NewGlobalConstraintsProposalEventResult {
   /**

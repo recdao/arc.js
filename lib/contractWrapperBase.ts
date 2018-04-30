@@ -19,7 +19,10 @@ import { EventFetcherFactory, Web3EventService } from "./web3EventService";
  *   [ wrapper properties and methods ]
  * }
  *
- * export const AbsoluteVote = new ContractWrapperFactory("AbsoluteVote", AbsoluteVoteWrapper);
+ * export const AbsoluteVote = new ContractWrapperFactory(
+ *  "AbsoluteVote",
+ *  AbsoluteVoteWrapper,
+ *  new Web3EventService());
  * ```
  */
 export abstract class ContractWrapperBase implements HasContract {
@@ -49,8 +52,9 @@ export abstract class ContractWrapperBase implements HasContract {
   /**
    * ContractWrapperFactory constructs this
    * @param solidityContract The json contract truffle artifact
+   * @param web3EventService
    */
-  constructor(private solidityContract: any) {
+  constructor(private solidityContract: any, protected web3EventService: Web3EventService) {
   }
 
   /**
@@ -187,7 +191,7 @@ export abstract class ContractWrapperBase implements HasContract {
    * @param eventName
    */
   protected createEventFetcherFactory<TArgs>(eventName: string): EventFetcherFactory<TArgs> {
-    return Web3EventService.createEventFetcherFactory(eventName, this);
+    return this.web3EventService.createEventFetcherFactory(eventName, this);
   }
 
   protected validateStandardSchemeParams(params: StandardSchemeParams): void {

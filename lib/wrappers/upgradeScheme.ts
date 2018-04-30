@@ -3,16 +3,16 @@ import { Address, DefaultSchemePermissions, Hash, SchemePermissions, SchemeWrapp
 import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
-  ContractWrapperBase,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { ProposalGeneratorBase } from "../proposalGeneratorBase";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
-export class UpgradeSchemeWrapper extends ContractWrapperBase implements SchemeWrapper {
+export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
   public name: string = "UpgradeScheme";
   public friendlyName: string = "Upgrade Scheme";
@@ -173,7 +173,8 @@ export class UpgradeSchemeWrapper extends ContractWrapperBase implements SchemeW
   }
 }
 
-export const UpgradeSchemeFactory = new ContractWrapperFactory("UpgradeScheme", UpgradeSchemeWrapper);
+export const UpgradeSchemeFactory =
+  new ContractWrapperFactory("UpgradeScheme", UpgradeSchemeWrapper, new Web3EventService());
 
 export interface NewUpgradeProposalEventResult {
   /**

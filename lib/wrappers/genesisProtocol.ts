@@ -21,7 +21,7 @@ import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   ExecuteProposalEventResult,
   NewProposalEventResult,
@@ -740,7 +740,7 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
         proposalsEventFetcher: this.ExecuteProposal,
       });
 
-    return await proposalService.getProposals(Object.assign({ avatar: options.avatar },
+    return await proposalService.getVotableProposals(Object.assign({ avatar: options.avatar },
       options.proposalId ? { eventArgsFilter: { _proposalId: options.proposalId } } : undefined));
   }
 
@@ -920,7 +920,10 @@ export class GenesisProtocolFactoryType extends ContractWrapperFactory<GenesisPr
 }
 
 export const GenesisProtocolFactory =
-  new GenesisProtocolFactoryType("GenesisProtocol", GenesisProtocolWrapper) as GenesisProtocolFactoryType;
+  new GenesisProtocolFactoryType(
+    "GenesisProtocol",
+    GenesisProtocolWrapper,
+    new Web3EventService()) as GenesisProtocolFactoryType;
 
 export interface StakeEventResult {
   _amount: BigNumber;

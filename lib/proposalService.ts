@@ -1,6 +1,6 @@
 import { BigNumber } from "bignumber.js";
 import { Address, Hash } from "./commonTypes";
-import { VotingMachineServiceFactory } from "./votingMachineService";
+import { VotingMachineService } from "./votingMachineService";
 import {
   EntityFetcherFactory,
   EventFetcherFactory,
@@ -19,31 +19,38 @@ import { ExecuteProposalEventResult, NewProposalEventResult } from "./wrappers/c
  */
 export class ProposalService {
 
+  constructor(private web3EventService: Web3EventService) {
+
+  }
+
   /**
    * Returns an EntityFetcherFactory for fetching proposal-related events.  Can take any EventFetcherFactory
    * whose event args supply `_proposalId`.  Returns events as a promise of `TProposal`.  You must supply an
    * `EventFetcherFactory` for fetching the events and a callback to transform `TEventArgs` to a promise of `TProposal`.
    * @type TEventArgs The type of the `args` object in the event.
    * @type TProposal The type of object returned as a transformation of the `args` information in each event.
-   * @param options
+   * @param proposalsEventFetcher Event fetcher to use to get or watch the event that supplies `TEventArgs`.
+   * @param transformEventCallback Returns Promise of `TProposal` given `TEventArgs` for the event.  If it
+   * returns `undefined` then no entity is returned for that event, so this is a programatic way in which events
+   * can be filtered.
    */
-  public ProposalEvents<TProposal, TEventArgs extends EventHasPropertyId = EventHasPropertyId>(
-    options: GetSchemeProposalsOptions<TProposal, TEventArgs>): EntityFetcherFactory<TProposal> {
+  public getProposalEvents<TProposal, TEventArgs extends EventHasPropertyId = EventHasPropertyId>(
+    proposalsEventFetcher: EventFetcherFactory<TEventArgs>,
+    transformEventCallback: TransformEventCallback<TProposal, TEventArgs>)
+    : EntityFetcherFactory<TProposal, TEventArgs> {
 
-    this.validateGetProposalOptions(options);
-
-    if (!options.transformEventCallback) {
+    if (!transformEventCallback) {
       throw new Error("transformEventCallback must be supplied");
     }
 
-    if (!options.proposalsEventFetcher) {
+    if (!proposalsEventFetcher) {
       throw new Error("proposalsEventFetcher must be supplied");
     }
 
-    return Web3EventService.createEntityFetcherFactory<TProposal, TEventArgs>(
-      options.proposalsEventFetcher,
+    return this.web3EventService.createEntityFetcherFactory<TProposal, TEventArgs>(
+      proposalsEventFetcher,
       (args: TEventArgs): Promise<TProposal> => {
-        return options.transformEventCallback(args);
+        return transformEventCallback(args);
       });
   }
 
@@ -54,11 +61,10 @@ export class ProposalService {
    *
    * @param votingMachineAddress
    */
-  public async VotableProposals(votingMachineAddress: Address): Promise<EntityFetcherFactory<VotableProposal>> {
+  public getVotableProposals(votingMachineService: VotingMachineService):
+    EntityFetcherFactory<VotableProposal, NewProposalEventResult> {
 
-    const votingMachineService = await VotingMachineServiceFactory.create(votingMachineAddress);
-
-    return Web3EventService.createEntityFetcherFactory<VotableProposal, NewProposalEventResult>(
+    return this.web3EventService.createEntityFetcherFactory<VotableProposal, NewProposalEventResult>(
       votingMachineService.VotableProposals,
       (args: NewProposalEventResult): Promise<VotableProposal> => {
         return Promise.resolve(
@@ -79,11 +85,10 @@ export class ProposalService {
    *
    * @param votingMachineAddress
    */
-  public async ExecutedProposals(votingMachineAddress: Address): Promise<EntityFetcherFactory<ExecutedProposal>> {
+  public getExecutedProposals(votingMachineService: VotingMachineService):
+    EntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult> {
 
-    const votingMachineService = await VotingMachineServiceFactory.create(votingMachineAddress);
-
-    return Web3EventService.createEntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult>(
+    return this.web3EventService.createEntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult>(
       votingMachineService.ExecuteProposal,
       (args: ExecuteProposalEventResult): Promise<ExecutedProposal> => {
         return Promise.resolve(
@@ -95,69 +100,28 @@ export class ProposalService {
         );
       });
   }
-
-  private validateGetProposalOptions<TProposal>(options: GetProposalsOptions<TProposal>): void {
-
-    if (!options.callback) {
-      throw new Error("callback must be supplied");
-    }
-
-    options.eventArgsFilter = Object.assign(
-      {}, options.avatarAddress ? { _avatar: options.avatarAddress } : {}, options.eventArgsFilter);
-
-    options.eventFilterConfig = Object.assign({}, { fromBlock: 0 }, options.eventFilterConfig);
-  }
 }
 
-export type PerProposalCallback<TProposal> = (proposal: TProposal) => void | Promise<boolean>;
-
-export interface GetProposalsOptions<TProposal> {
-  /**
-   * Optional avatar address.
-   */
-  avatarAddress?: Address;
-  /**
-   * Optional to watch.  Default is get.
-   */
-  watch?: boolean;
-  /**
-   * Optional event filter.  Default is { fromBlock: 0 }
-   */
-  eventFilterConfig?: EventFetcherFilterObject;
-  /**
-   * Optional event argument filter, like `{ _proposalId: [someHash] }`.
-   * If `options.avatarAddress` is set then `{ _avatar: options.avatarAddress }` is
-   * automatically added.
-   */
-  eventArgsFilter?: any;
-  /**
-   * Callback to be invoked after obtaining each proposal.
-   * Return nothing or a promise of whether to stop finding proposals at this point.
-   */
-  callback: PerProposalCallback<TProposal>;
-}
-
-export interface GetVotableProposalsOptions extends GetProposalsOptions<VotableProposal> {
-}
+// export type PerProposalCallback<TProposal> = (proposal: TProposal) => void | Promise<boolean>;
 
 export interface EventHasPropertyId {
   _proposalId: Hash;
 }
 
-export interface AvatarProposalSpecifier {
-  /**
-   * The avatar under which the proposal was created
-   */
-  avatarAddress: Address;
-  /**
-   * The desired proposalId
-   */
-  proposalId: Hash;
-  /**
-   * Extra properties
-   */
-  [x: string]: any;
-}
+// export interface AvatarProposalSpecifier {
+//   /**
+//    * The avatar under which the proposal was created
+//    */
+//   avatarAddress: Address;
+//   /**
+//    * The desired proposalId
+//    */
+//   proposalId: Hash;
+//   /**
+//    * Extra properties
+//    */
+//   [x: string]: any;
+// }
 
 export interface VotableProposal {
   numOfChoices: number;
@@ -179,15 +143,4 @@ export interface ExecutedProposal {
    * The total reputation in the DAO at the time the proposal was executed
    */
   totalReputation: BigNumber;
-}
-
-export interface GetSchemeProposalsOptions<TProposal, TEventArgs> extends GetProposalsOptions<TProposal> {
-  /**
-   * Returns Promise of `TProposal` given the event args for the event and an AvatarProposalSpecifier.
-   */
-  transformEventCallback: TransformEventCallback<TProposal, TEventArgs>;
-  /**
-   * Event fetcher to use to get or watch the event that supplies `TEventArgs`.
-   */
-  proposalsEventFetcher: EventFetcherFactory<TEventArgs>;
 }

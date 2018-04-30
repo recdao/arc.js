@@ -3,19 +3,28 @@ import { Address, HasContract, Hash } from "./commonTypes";
 import { ArcTransactionResult } from "./contractWrapperBase";
 import { Utils } from "./utils";
 import { IntVoteInterface, VotingMachineService } from "./votingMachineService";
+import { Web3EventService } from './web3EventService';
 
 /**
  * Instantiate a VotingMachineService given the address of any contract
  * that implements the `IntVoteInterface` Arc contract interface.
  */
 export class ProposalVotingMachineServiceFactory {
+
+  constructor(private web3EventService: Web3EventService) {
+  }
+
   /**
    * Create a new VotingMachineService given a voting machine address
    * @param votingMachineAddress
    */
-  public static async create(votingMachineAddress: Address, proposalId: Hash): Promise<ProposalVotingMachineService> {
+  public async create(votingMachineAddress: Address, proposalId: Hash): Promise<ProposalVotingMachineService> {
     const contract = await Utils.requireContract("IntVoteInterface");
-    return new ProposalVotingMachineService(await contract.at(votingMachineAddress), proposalId);
+    return new ProposalVotingMachineService(
+      await contract.at(votingMachineAddress),
+      votingMachineAddress,
+      this.web3EventService,
+      proposalId);
   }
 }
 
@@ -32,8 +41,12 @@ export class ProposalVotingMachineService extends VotingMachineService implement
    * @param votingMachineAddress Address of any contract that implements
    * Arc's `IntVoteInterface`.
    */
-  constructor(public contract: IntVoteInterface, public proposalId: Hash) {
-    super(contract);
+  constructor(
+    contract: IntVoteInterface,
+    votingMachineAddress: Address,
+    web3EventService: Web3EventService,
+    public proposalId: Hash) {
+    super(contract, votingMachineAddress, web3EventService);
   }
 
   /**

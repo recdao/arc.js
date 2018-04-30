@@ -53,7 +53,7 @@ pages:
   - DAO : 'api/classes/DAO.md'
   - DaoCreatorFactoryType : 'api/classes/DaoCreatorFactoryType.md'
   - DaoCreatorWrapper : 'api/classes/DaoCreatorWrapper.md'
-  - EventService : 'api/classes/EventService.md'
+  - PubSubEventService : 'api/classes/PubSubEventService.md'
   - EventSubscription : 'api/classes/EventSubscription.md'
   - GenesisProtocolFactoryType : 'api/classes/GenesisProtocolFactoryType.md'
   - GenesisProtocolWrapper : 'api/classes/GenesisProtocolWrapper.md'

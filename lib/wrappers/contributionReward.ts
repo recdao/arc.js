@@ -13,21 +13,20 @@ import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
   ArcTransactionResult,
-  ContractWrapperBase,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
+import { ProposalGeneratorBase } from "../proposalGeneratorBase";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { EventFetcherFactory } from "../web3EventService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   ProposalDeletedEventResult,
   ProposalExecutedEventResult,
   RedeemReputationEventResult,
 } from "./commonEventInterfaces";
 
-export class ContributionRewardWrapper extends ContractWrapperBase {
+export class ContributionRewardWrapper extends ProposalGeneratorBase {
 
   public name: string = "ContributionReward";
   public friendlyName: string = "Contribution Reward";
@@ -309,21 +308,36 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
   }
 
   /**
-   * Use proposalService to work with ContributionReward proposals.
+   * Returns a Promise of an EntityFetcherFactory for votable ContributionProposals.
+   * @param avatarAddress
    */
-  public createProposalService(): ProposalService<ContributionProposal> {
-    return new ProposalService<ContributionProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): ContributionProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.NewContributionProposal,
-    });
+  public async getVotableProposalsFactory(avatarAddress: Address):
+    Promise<EntityFetcherFactory<ContributionProposal, NewContributionProposalEventResult>> {
+
+    return this.web3EventService.createEntityFetcherFactory<ContributionProposal, NewContributionProposalEventResult>(
+      this.NewContributionProposal,
+      async (args: NewContributionProposalEventResult): Promise<ContributionProposal> => {
+        if (args._avatar === avatarAddress) {
+          return this.getProposal(avatarAddress, args._proposalId);
+        }
+      });
+  }
+
+  /**
+   * Returns a Promise of an EntityFetcherFactory for executed ContributionProposals.
+   * Note that the ContributionProposals contract retains the original proposal after execution.
+   * @param avatarAddress
+   */
+  public async getExecutedProposalsFactory(avatarAddress: Address):
+    Promise<EntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>> {
+
+    return this.web3EventService.createEntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>(
+      this.ProposalExecuted,
+      async (args: ProposalExecutedEventResult): Promise<ContributionProposal> => {
+        if (args._avatar === avatarAddress) {
+          return this.getProposal(avatarAddress, args._proposalId);
+        }
+      });
   }
 
   /**
@@ -351,15 +365,32 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
       throw new Error("beneficiaryAddress is not defined");
     }
 
-    const proposals = await this.createProposalService().getProposals({
-      avatarAddress: options.avatar,
+    /**
+     * convert this.ProposalExecuted events to ContributionReward entities
+     */
+    const executedProposalsFetcherFactory = await this.getExecutedProposalsFactory(options.avatar);
+
+    /**
+     * filter by avatar and start from block 0
+     */
+    const proposalsFetcher = executedProposalsFetcherFactory(
+      { _avatar: options.avatar },
+      { fromBlock: 0 });
+
+    /**
+     * get the proposals
+     */
+    let proposals: Array<ContributionProposal>;
+    proposalsFetcher.get(async (error: Error, props: Promise<Array<ContributionProposal>>) => {
+      proposals =
+        (await props).filter((p: ContributionProposal) => p.beneficiaryAddress === options.beneficiaryAddress);
     });
 
     const rewardsArray = new Array<ProposalRewards>();
 
     for (const proposal of proposals) {
 
-      const proposalRewards = {} as ProposalRewards;
+      const proposalRewards: Partial<ProposalRewards> = {};
 
       proposalRewards.proposalId = proposal.proposalId;
 
@@ -375,7 +406,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
       await this.computeRemainingReward(proposalRewards,
         proposal, "reputationChange", options.avatar, RewardType.Reputation);
 
-      rewardsArray.push(proposalRewards);
+      rewardsArray.push(proposalRewards as ProposalRewards);
     }
 
     return rewardsArray;
@@ -397,6 +428,11 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
       params.voteParametersHash,
       params.votingMachineAddress
     );
+  }
+
+  public async getProposal(avatarAddress: Address, proposalId: Hash): Promise<ContributionProposal> {
+    const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
+    return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
   }
 
   public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
@@ -426,7 +462,7 @@ export class ContributionRewardWrapper extends ContractWrapperBase {
   }
 
   private async computeRemainingReward(
-    proposalRewards: ProposalRewards,
+    proposalRewards: Partial<ProposalRewards>,
     proposal: ContributionProposal,
     rewardName: string,
     avatarAddress: Address,
@@ -467,7 +503,8 @@ export enum RewardType {
   ExternalToken = 3,
 }
 
-export const ContributionRewardFactory = new ContractWrapperFactory("ContributionReward", ContributionRewardWrapper);
+export const ContributionRewardFactory =
+  new ContractWrapperFactory("ContributionReward", ContributionRewardWrapper, new Web3EventService());
 
 export interface NewContributionProposalEventResult {
   /**

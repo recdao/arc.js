@@ -4,15 +4,15 @@ import { Address, DefaultSchemePermissions, Hash, SchemePermissions, SchemeWrapp
 import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
-  ContractWrapperBase,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { ProposalGeneratorBase } from "../proposalGeneratorBase";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
-export class VoteInOrganizationSchemeWrapper extends ContractWrapperBase implements SchemeWrapper {
+export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
   public name: string = "VoteInOrganizationScheme";
   public friendlyName: string = "Vote In Organization Scheme";
@@ -123,8 +123,11 @@ export class VoteInOrganizationSchemeWrapper extends ContractWrapperBase impleme
   }
 }
 
-export const VoteInOrganizationSchemeFactory = new ContractWrapperFactory(
-  "VoteInOrganizationScheme", VoteInOrganizationSchemeWrapper);
+export const VoteInOrganizationSchemeFactory =
+  new ContractWrapperFactory(
+    "VoteInOrganizationScheme",
+    VoteInOrganizationSchemeWrapper,
+    new Web3EventService());
 
 export interface VoteOnBehalfEventResult {
   _params: Array<Hash>;

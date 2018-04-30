@@ -15,13 +15,19 @@ import {
  * that implements the `IntVoteInterface` Arc contract interface.
  */
 export class VotingMachineServiceFactory {
+
+  constructor(private web3EventService: Web3EventService) {
+  }
   /**
    * Create a new VotingMachineService given a voting machine address
    * @param votingMachineAddress
    */
-  public static async create(votingMachineAddress: Address): Promise<VotingMachineService> {
+  public async create(votingMachineAddress: Address): Promise<VotingMachineService> {
     const contract = await Utils.requireContract("IntVoteInterface");
-    return new VotingMachineService(await contract.at(votingMachineAddress));
+    return new VotingMachineService(
+      await contract.at(votingMachineAddress),
+      votingMachineAddress,
+      this.web3EventService);
   }
 }
 
@@ -36,42 +42,45 @@ export class VotingMachineService implements HasContract {
    * Get or watch events fired on the creation of a new proposal.
    */
   public NewProposal: EventFetcherFactory<NewProposalEventResult> =
-    Web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal", this);
+    this.web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal", this);
   /**
    * Get or watch events fired when a vote is cancelled.
    * Note you won't get this from GenesisProtocol whose proposals and votes are not cancellable
    */
   public CancelProposal: EventFetcherFactory<CancelProposalEventResult> =
-    Web3EventService.createEventFetcherFactory<CancelProposalEventResult>("CancelProposal", this);
+    this.web3EventService.createEventFetcherFactory<CancelProposalEventResult>("CancelProposal", this);
   /**
    * Get or watch events fired when proposals have been executed
    */
   public ExecuteProposal: EventFetcherFactory<ExecuteProposalEventResult> =
-    Web3EventService.createEventFetcherFactory<ExecuteProposalEventResult>("ExecuteProposal", this);
+    this.web3EventService.createEventFetcherFactory<ExecuteProposalEventResult>("ExecuteProposal", this);
   /**
    * Get or watch events fired whenever votes are cast on a proposal
    */
   public VoteProposal: EventFetcherFactory<VoteProposalEventResult> =
-    Web3EventService.createEventFetcherFactory<VoteProposalEventResult>("VoteProposal", this);
+    this.web3EventService.createEventFetcherFactory<VoteProposalEventResult>("VoteProposal", this);
   /**
    * Get or watch events fired when a voter's vote is cancelled.
    * Note you won't get this from GenesisProtocol whose proposals and votes are not cancellable
    */
   public CancelVoting: EventFetcherFactory<CancelVotingEventResult> =
-    Web3EventService.createEventFetcherFactory<CancelVotingEventResult>("CancelVoting", this);
+    this.web3EventService.createEventFetcherFactory<CancelVotingEventResult>("CancelVoting", this);
   /**
    * Instantiate VotingMachineService given the voting machine's address.
    *
    * @param votingMachineAddress Address of any contract that implements
    * Arc's `IntVoteInterface`.
    */
-  constructor(public contract: IntVoteInterface) {
+  constructor(
+    public contract: IntVoteInterface,
+    public votingMachineAddress: Address,
+    private web3EventService: Web3EventService) {
   }
   /**
    * Get or watch NewProposal events, filtering out proposals that are no longer votable.
    */
   public get VotableProposals(): EventFetcherFactory<NewProposalEventResult> {
-    return Web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal", this,
+    return this.web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal", this,
       (error: Error, log: Array<DecodedLogEntryEvent<NewProposalEventResult>>) => {
         if (!error) {
           log = log.filter(async (event: DecodedLogEntryEvent<NewProposalEventResult>) => {
@@ -283,9 +292,9 @@ export class VotingMachineService implements HasContract {
  */
 export interface IntVoteInterface {
   propose(numOfChoices: number,
-    proposalParameters: Hash,
-    avatar: Address,
-    execute: Address): Promise<TransactionReceiptTruffle>;
+          proposalParameters: Hash,
+          avatar: Address,
+          execute: Address): Promise<TransactionReceiptTruffle>;
   cancelProposal(proposalId: Hash): Promise<TransactionReceiptTruffle>;
   ownerVote(proposalId: Hash, vote: number, voter: Address): Promise<TransactionReceiptTruffle>;
   vote(proposalId: Hash, vote: number): Promise<TransactionReceiptTruffle>;

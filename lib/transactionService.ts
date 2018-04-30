@@ -1,12 +1,12 @@
 import { TransactionReceiptTruffle } from "./contractWrapperBase";
-import { EventService, IEventSubscription } from "./eventService";
+import { IEventSubscription, PubSubEventService } from "./pubSubEventService";
 
 /**
  * Enables you to track the completion of transactions triggered by Arc.js functions.
  * You can subscribe to events that tell you how many transactions are anticipated when
  * the transactions have completed.  For more information, see [subscribe](TransactionService#subscribe).
  */
-export class TransactionService extends EventService {
+export class TransactionService extends PubSubEventService {
 
   /**
    * Generate a new invocation key for the given topic and function.
@@ -53,7 +53,7 @@ export class TransactionService extends EventService {
   /**
    * Send the given payload to subscribers of the given topic.
    *
-   * @param topic See [subscribe](EventService#subscribe)
+   * @param topic See [subscribe](PubSubEventService#subscribe)
    * @param payload Sent in the subscription callback.
    * @param tx the transaction.  Don't supply for kick-off event.
    * @returns True if there are any subscribers
@@ -66,7 +66,7 @@ export class TransactionService extends EventService {
     if (tx) {
       payload = Object.assign({}, payload, { tx });
     }
-    return EventService.publish(topic, payload);
+    return PubSubEventService.publish(topic, payload);
   }
 
   /**
@@ -81,7 +81,7 @@ export class TransactionService extends EventService {
     superTopic: string,
     superPayload: TransactionReceiptsEventInfo): IEventSubscription {
 
-    return EventService.subscribe(topics, (topic: string, txEventInfo: TransactionReceiptsEventInfo) => {
+    return PubSubEventService.subscribe(topics, (topic: string, txEventInfo: TransactionReceiptsEventInfo) => {
       if (txEventInfo.tx) { // skip kick-off events
         TransactionService.publishTxEvent(superTopic, superPayload, txEventInfo.tx);
       }

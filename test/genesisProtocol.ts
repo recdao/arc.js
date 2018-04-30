@@ -84,7 +84,8 @@ describe("GenesisProtocol", () => {
 
     const proposalId2 = await createProposal();
 
-    const proposals = await genesisProtocol.createProposalService().getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await genesisProtocol.createProposalService()
+      .getVotableProposals({ avatarAddress: dao.avatar.address });
 
     // TODO: This should be === 2.  Should be fixed in next Arc version
     assert(proposals.length >= 2, `Should have found 2 proposals`);

@@ -215,7 +215,7 @@ describe("ContributionReward scheme", () => {
 
     const proposalId2 = result.proposalId;
 
-    const proposals = await scheme.createProposalService().getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await scheme.createProposalService().getVotableProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId1).length, "proposalId1 not found");
@@ -238,7 +238,7 @@ describe("ContributionReward scheme", () => {
 
     const reputationChangeProposalId = result.proposalId;
 
-    const proposals = await scheme.createProposalService().getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await scheme.createProposalService().getVotableProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === nativeRewardProposalId).length,

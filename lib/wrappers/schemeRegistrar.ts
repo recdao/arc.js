@@ -3,15 +3,15 @@ import { Address, DefaultSchemePermissions, Hash, SchemePermissions, SchemeWrapp
 import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
-  ContractWrapperBase,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { ProposalGeneratorBase } from "../proposalGeneratorBase";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
-export class SchemeRegistrarWrapper extends ContractWrapperBase implements SchemeWrapper {
+export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
   public name: string = "SchemeRegistrar";
   public friendlyName: string = "Scheme Registrar";
@@ -207,7 +207,8 @@ export class SchemeRegistrarWrapper extends ContractWrapperBase implements Schem
   }
 }
 
-export const SchemeRegistrarFactory = new ContractWrapperFactory("SchemeRegistrar", SchemeRegistrarWrapper);
+export const SchemeRegistrarFactory =
+  new ContractWrapperFactory("SchemeRegistrar", SchemeRegistrarWrapper, new Web3EventService());
 
 export interface NewSchemeProposalEventResult {
   /**

@@ -1,5 +1,6 @@
 import { ContractWrapperBase } from "./contractWrapperBase";
 import { Utils } from "./utils";
+import { Web3EventService } from "./web3EventService";
 
 /**
  * Generic class factory for all of the contract wrapper classes.
@@ -16,7 +17,9 @@ export class ContractWrapperFactory<TWrapper extends ContractWrapperBase> {
    */
   public constructor(
     private solidityContractName: string,
-    private wrapper: new (solidityContract: any) => TWrapper) { }
+    private wrapper: new (solidityContract: any, web3EventService: Web3EventService) => TWrapper,
+    private web3EventService: Web3EventService) {
+  }
 
   /**
    * Deploy a new instance of the contract and return a wrapper around it.
@@ -24,7 +27,7 @@ export class ContractWrapperFactory<TWrapper extends ContractWrapperBase> {
    */
   public async new(...rest: Array<any>): Promise<TWrapper> {
     await this.ensureSolidityContract();
-    return new this.wrapper(this.solidityContract).hydrateFromNew(...rest);
+    return new this.wrapper(this.solidityContract, this.web3EventService).hydrateFromNew(...rest);
   }
 
   /**
@@ -34,7 +37,7 @@ export class ContractWrapperFactory<TWrapper extends ContractWrapperBase> {
    */
   public async at(address: string): Promise<TWrapper> {
     await this.ensureSolidityContract();
-    return new this.wrapper(this.solidityContract).hydrateFromAt(address);
+    return new this.wrapper(this.solidityContract, this.web3EventService).hydrateFromAt(address);
   }
 
   /**
@@ -44,7 +47,7 @@ export class ContractWrapperFactory<TWrapper extends ContractWrapperBase> {
    */
   public async deployed(): Promise<TWrapper> {
     await this.ensureSolidityContract();
-    return new this.wrapper(this.solidityContract).hydrateFromDeployed();
+    return new this.wrapper(this.solidityContract, this.web3EventService).hydrateFromDeployed();
   }
 
   private async ensureSolidityContract(): Promise<void> {

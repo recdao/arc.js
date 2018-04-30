@@ -9,7 +9,7 @@ All of the Arc.js contract wrapper classes expose the contract's events that loo
 
 ## Arc.js Pub/Sub Events
 
-Arc.js has a pub/sub event system accessible using the [EventService](api/classes/EventService).  You can use a subclass of [EventService](api/classes/EventService) called [TransactionService](api/classes/TransactionService) to track transactions as they complete.
+Arc.js has a pub/sub event system accessible using the [PubSubEventService](api/classes/PubSubEventService).  You can use a subclass of [PubSubEventService](api/classes/PubSubEventService) called [TransactionService](api/classes/TransactionService) to track transactions as they complete.
 
 ### Tracking Transactions
 

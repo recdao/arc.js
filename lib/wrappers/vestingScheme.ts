@@ -7,7 +7,6 @@ import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
   ArcTransactionResult,
-  ContractWrapperBase,
   StandardSchemeParams,
   TransactionReceiptTruffle,
 } from "../contractWrapperBase";
@@ -15,10 +14,10 @@ import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalExecutedEventResult } from "./commonEventInterfaces";
 
-export class VestingSchemeWrapper extends ContractWrapperBase implements SchemeWrapper {
+export class VestingSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
   public name: string = "VestingScheme";
   public friendlyName: string = "Vesting Scheme";
@@ -342,7 +341,8 @@ export class ArcTransactionAgreementResult extends ArcTransactionResult {
   }
 }
 
-export const VestingSchemeFactory = new ContractWrapperFactory("VestingScheme", VestingSchemeWrapper);
+export const VestingSchemeFactory =
+  new ContractWrapperFactory("VestingScheme", VestingSchemeWrapper, new Web3EventService());
 
 export interface AgreementProposalEventResult {
   /**

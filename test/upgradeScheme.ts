@@ -52,7 +52,7 @@ describe("UpgradeScheme", () => {
 
     const proposalService = upgradeScheme.createProposalServiceUpgradeUpgradeScheme();
 
-    const proposals = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await proposalService.getVotableProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 1);
 
@@ -84,7 +84,7 @@ describe("UpgradeScheme", () => {
 
     const proposalService = upgradeScheme.createProposalServiceUpgradeController();
 
-    const proposals = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await proposalService.getVotableProposals({ avatarAddress: dao.avatar.address });
 
     assert.equal(proposals.length, 1);
 

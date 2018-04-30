@@ -7,7 +7,7 @@ import {
   ContractWrapperBase
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
-import { EventFetcherFactory } from "../web3EventService";
+import { EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ExecuteProposalEventResult, NewProposalEventResult, VoteProposalEventResult } from "./commonEventInterfaces";
 
 export class AbsoluteVoteWrapper extends ContractWrapperBase {
@@ -93,7 +93,8 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
   }
 }
 
-export const AbsoluteVoteFactory = new ContractWrapperFactory("AbsoluteVote", AbsoluteVoteWrapper);
+export const AbsoluteVoteFactory =
+  new ContractWrapperFactory("AbsoluteVote", AbsoluteVoteWrapper, new Web3EventService());
 
 export interface CancelProposalEventResult {
   /**

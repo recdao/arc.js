@@ -67,13 +67,13 @@ describe("VestingScheme scheme", () => {
 
     const proposalService = vestingScheme.createProposalService();
 
-    let agreements = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
+    let agreements = await proposalService.getVotableProposals({ avatarAddress: dao.avatar.address });
 
     assert(agreements.length === 2, "Should have found at 2 agreements");
     assert(agreements.filter((a: Agreement) => a.proposalId === proposalId1).length, "proposalId1 not found");
     assert(agreements.filter((a: Agreement) => a.proposalId === proposalId2).length, "proposalId2 not found");
 
-    agreements = await proposalService.getProposals(
+    agreements = await proposalService.getVotableProposals(
       { avatarAddress: dao.avatar.address, eventArgsFilter: { _proposalId: proposalId2 } });
 
     // TODO: this should be 1, see https://github.com/daostack/arc/issues/448
