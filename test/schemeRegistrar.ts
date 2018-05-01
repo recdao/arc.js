@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import { AbsoluteVoteWrapper, WrapperService } from "../lib";
 import { DefaultSchemePermissions } from "../lib/commonTypes";
 import { Utils } from "../lib/utils";
 import {
@@ -33,14 +34,16 @@ describe("SchemeRegistrar", () => {
     assert.isOk(schemeRegistrar);
 
     const votingMachine = await helpers.getSchemeVotingMachine(dao, schemeRegistrar);
+    const absoluteVoteWrapper =
+      await WrapperService.getContractWrapper("AbsoluteVote", votingMachine.address) as AbsoluteVoteWrapper;
 
-    await votingMachine.contract.setParameters(voteParamsArray[0], voteParamsArray[1], voteParamsArray[2]);
+    await absoluteVoteWrapper.contract.setParameters(voteParamsArray[0], voteParamsArray[1], voteParamsArray[2]);
 
     assert.equal(
-      await votingMachine.contract.getParametersHash(voteParamsArray[0], voteParamsArray[1], voteParamsArray[2]),
+      await absoluteVoteWrapper.contract.getParametersHash(voteParamsArray[0], voteParamsArray[1], voteParamsArray[2]),
       voteParamsHash, "voting machine params hash was not correctly computed");
 
-    const voteParams = await votingMachine.getParameters(voteParamsHash);
+    const voteParams = await absoluteVoteWrapper.getParameters(voteParamsHash);
 
     assert.equal(voteParams.reputation, helpers.SOME_ADDRESS);
     assert.equal(voteParams.votePerc, 33);
@@ -184,18 +187,20 @@ describe("SchemeRegistrar", () => {
 
     const proposalToAddId = result.proposalId;
 
-    const proposalsNew =
-      await schemeRegistrar.createProposalServiceNewSchemes()
-        .getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposalsNew = await (
+      await schemeRegistrar.getVotableAddSchemeProposals(dao.avatar.address))(
+        {},
+        { fromBlock: 0 }).get();
 
     assert.equal(proposalsNew.length, 1, "Should have found 1 proposals");
     assert(proposalsNew[0].proposalId === proposalToAddId, "proposalToAddId not found");
     assert.equal(proposalsNew[0].proposalType, SchemeRegistrarProposalType.Add);
     assert.equal(proposalsNew[0].permissions, DefaultSchemePermissions.ContributionReward);
 
-    const proposalsRemove =
-      await schemeRegistrar.createProposalServiceRemoveSchemes()
-        .getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposalsRemove = await (
+      await schemeRegistrar.getVotableRemoveSchemeProposals(dao.avatar.address))(
+        {},
+        { fromBlock: 0 }).get();
 
     assert.equal(proposalsRemove.length, 1, "Should have found 1 proposals");
     assert(proposalsRemove[0].proposalId === proposalToRemoveId, "proposalToRemoveId not found");

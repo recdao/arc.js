@@ -62,16 +62,20 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
    * EntityFetcherFactory for votable VoteInOrganizationProposal.
    * @param avatarAddress
    */
-  public async getVotableUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+  public async getVotableProposals(avatarAddress: Address):
     Promise<EntityFetcherFactory<VotableVoteInOrganizationProposal, NewVoteProposalEventResult>> {
 
     return this.proposalService.getProposalEvents(
-      this.NewVoteProposal,
-      async (args: NewVoteProposalEventResult): Promise<VotableVoteInOrganizationProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.NewVoteProposal,
+        transformEventCallback:
+          async (args: NewVoteProposalEventResult): Promise<VotableVoteInOrganizationProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   public async getVotableProposal(

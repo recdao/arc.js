@@ -212,16 +212,20 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
    * EntityFetcherFactory for votable Agreement.
    * @param avatarAddress
    */
-  public async getVotableUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+  public async getVotableProposals(avatarAddress: Address):
     Promise<EntityFetcherFactory<AgreementProposal, ProposalExecutedEventResult>> {
 
     return this.proposalService.getProposalEvents(
-      this.ProposalExecuted,
-      async (args: ProposalExecutedEventResult): Promise<AgreementProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.ProposalExecuted,
+        transformEventCallback:
+          async (args: ProposalExecutedEventResult): Promise<AgreementProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   /**
@@ -229,7 +233,7 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
    * The Arc VestingScheme contract retains the original Agreement struct after execution.
    * @param avatarAddress
    */
-  public async getExecutedUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+  public async getExecutedProposals(avatarAddress: Address):
     Promise<EntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult>> {
 
     // TODO return full Agreement instead of ExecutedProposal

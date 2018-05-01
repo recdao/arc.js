@@ -698,13 +698,14 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
     const votingMachineService = new VotingMachineService(this.contract, this.address, this.web3EventService);
     const proposalService = new ProposalService(this.web3EventService);
 
-    return proposalService.getProposalEvents(
-      this.NewProposal,
-      async (args: NewProposalEventResult): Promise<GenesisProtocolProposal> => {
+    return proposalService.getProposalEvents({
+      proposalsEventFetcher: this.NewProposal,
+      transformEventCallback: async (args: NewProposalEventResult): Promise<GenesisProtocolProposal> => {
         return this.getProposal(args._proposalId);
       },
-      true,
-      votingMachineService);
+      votableOnly: true,
+      votingMachineService,
+    });
   }
 
   /**

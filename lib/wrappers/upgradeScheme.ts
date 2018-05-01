@@ -130,12 +130,16 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
     Promise<EntityFetcherFactory<VotableUpgradeSchemeProposal, ChangeUpgradeSchemeProposalEventResult>> {
 
     return this.proposalService.getProposalEvents(
-      this.ChangeUpgradeSchemeProposal,
-      async (args: ChangeUpgradeSchemeProposalEventResult): Promise<VotableUpgradeSchemeProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.ChangeUpgradeSchemeProposal,
+        transformEventCallback:
+          async (args: ChangeUpgradeSchemeProposalEventResult): Promise<VotableUpgradeSchemeProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   /**
@@ -146,12 +150,16 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
     Promise<EntityFetcherFactory<VotableUpgradeSchemeProposal, NewUpgradeProposalEventResult>> {
 
     return this.proposalService.getProposalEvents(
-      this.NewUpgradeProposal,
-      async (args: NewUpgradeProposalEventResult): Promise<VotableUpgradeSchemeProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.NewUpgradeProposal,
+        transformEventCallback:
+          async (args: NewUpgradeProposalEventResult): Promise<VotableUpgradeSchemeProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableUpgradeSchemeProposal> {

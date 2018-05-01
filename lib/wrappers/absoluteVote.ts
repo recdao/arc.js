@@ -1,13 +1,14 @@
 "use strict";
 import { Address, Hash, VoteConfig } from "../commonTypes";
 
-import { ProposalService, VotableProposal, VotingMachineService } from "..";
 import {
   ArcTransactionDataResult,
   ArcTransactionResult,
   ContractWrapperBase
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { ProposalService, VotableProposal } from "../proposalService";
+import { VotingMachineService } from "../votingMachineService";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ExecuteProposalEventResult, NewProposalEventResult, VoteProposalEventResult } from "./commonEventInterfaces";
 

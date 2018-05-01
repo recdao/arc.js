@@ -1,5 +1,8 @@
 import { assert } from "chai";
-import { AbsoluteVoteWrapper, ArcTransactionProposalResult, DAO, DecodedLogEntryEvent } from "../lib";
+import { BinaryVoteResult, VotingMachineService } from "../lib";
+import { ArcTransactionProposalResult, DecodedLogEntryEvent } from "../lib/contractWrapperBase";
+import { DAO } from "../lib/dao";
+import { AbsoluteVoteWrapper } from "../lib/wrappers/absoluteVote";
 import {
   ContributionProposal,
   ContributionRewardFactory,
@@ -12,7 +15,7 @@ import * as helpers from "./helpers";
 describe("ContributionReward scheme", () => {
   let dao: DAO;
   let scheme: ContributionRewardWrapper;
-  let votingMachine: AbsoluteVoteWrapper;
+  let votingMachine: VotingMachineService;
 
   beforeEach(async () => {
 
@@ -27,7 +30,7 @@ describe("ContributionReward scheme", () => {
       "ContributionReward",
       ContributionRewardFactory) as ContributionRewardWrapper;
 
-    votingMachine = await helpers.getSchemeVotingMachine(dao, scheme) as AbsoluteVoteWrapper;
+    votingMachine = await scheme.getVotingMachineService(dao.avatar.address);
   });
 
   const proposeReward = (rewardsSpec: any): Promise<ArcTransactionProposalResult> => {
@@ -207,6 +210,17 @@ describe("ContributionReward scheme", () => {
 
   it("can get proposals", async () => {
 
+    dao = await helpers.forgeDao({
+      schemes: [
+        {
+          name: "ContributionReward",
+          votingMachineParams: {
+            ownerVote: false,
+          },
+        },
+      ],
+    });
+
     let result = await proposeReward({ nativeTokenReward: web3.toWei(10) });
 
     const proposalId1 = result.proposalId;
@@ -215,14 +229,15 @@ describe("ContributionReward scheme", () => {
 
     const proposalId2 = result.proposalId;
 
-    const proposals = await scheme.createProposalService().getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await (await scheme.getVotableProposals(dao.avatar.address))({}, { fromBlock: 0 }).get();
 
     assert.equal(proposals.length, 2, "Should have found 2 proposals");
-    assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId1).length, "proposalId1 not found");
-    assert(proposals.filter((p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
+    assert(proposals.filter(
+      (p: ContributionProposal) => p.proposalId === proposalId1).length, "proposalId1 not found");
+    assert(proposals.filter(
+      (p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
 
-    const proposal = await scheme.createProposalService().getProposal(
-      { avatarAddress: dao.avatar.address, proposalId: proposalId2 });
+    const proposal = await scheme.getVotableProposal(dao.avatar.address, proposalId2);
     assert(proposal.proposalId === proposalId2, "proposalId2 not found");
     assert.equal(proposal.beneficiaryAddress, accounts[1],
       "beneficiaryAddress not set properly on proposal");
@@ -238,13 +253,16 @@ describe("ContributionReward scheme", () => {
 
     const reputationChangeProposalId = result.proposalId;
 
-    const proposals = await scheme.createProposalService().getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await (await scheme.getVotableProposals(dao.avatar.address))({}, { fromBlock: 0 }).get();
 
-    assert.equal(proposals.length, 2, "Should have found 2 proposals");
+    assert.equal(proposals.length, 2, "Should have found 2 votable proposals");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === nativeRewardProposalId).length,
       "nativeRewardProposalId not found");
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === reputationChangeProposalId).length,
       "reputationChangeProposalId not found");
+
+    await votingMachine.vote(BinaryVoteResult.Yes, nativeRewardProposalId, accounts[1]);
+    await votingMachine.vote(BinaryVoteResult.Yes, reputationChangeProposalId, accounts[1]);
 
     let rewards = await scheme.getBeneficiaryRewards({
       avatar: dao.avatar.address,
@@ -277,8 +295,6 @@ describe("ContributionReward scheme", () => {
     /**
      * redeem something
      */
-    await helpers.vote(votingMachine, nativeRewardProposalId, 1, accounts[1]);
-
     // this will mine a block, allowing the award to be redeemed
     await helpers.increaseTime(1);
 

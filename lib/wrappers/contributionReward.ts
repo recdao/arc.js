@@ -4,7 +4,8 @@ import {
   Address,
   DefaultSchemePermissions,
   Hash,
-  SchemePermissions
+  SchemePermissions,
+  SchemeWrapper
 } from "../commonTypes";
 import { ConfigService } from "../configService";
 
@@ -26,7 +27,7 @@ import {
   RedeemReputationEventResult,
 } from "./commonEventInterfaces";
 
-export class ContributionRewardWrapper extends ProposalGeneratorBase {
+export class ContributionRewardWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
   public name: string = "ContributionReward";
   public friendlyName: string = "Contribution Reward";
@@ -319,12 +320,16 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
     }
 
     return this.proposalService.getProposalEvents(
-      this.NewContributionProposal,
-      async (args: NewContributionProposalEventResult): Promise<ContributionProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.NewContributionProposal,
+        transformEventCallback:
+          async (args: NewContributionProposalEventResult): Promise<ContributionProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   /**
@@ -352,12 +357,6 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
     options: GetBeneficiaryRewardsParams = {} as GetBeneficiaryRewardsParams)
     : Promise<Array<ProposalRewards>> {
 
-    const defaults = {
-      proposalId: null,
-    };
-
-    options = Object.assign({}, defaults, options);
-
     if (!options.avatar) {
       throw new Error("avatar address is not defined");
     }
@@ -368,15 +367,14 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
     /**
      * Fetch from block 0 for the given avatar
      */
-    const proposalsFetcher = this.ExecutedProposals({ _avatar: options.avatar }, { fromBlock: 0 });
+    const proposalsFetcher = this.ExecutedProposals(
+      Object.assign({ _avatar: options.avatar }, options.proposalId ? { _proposalId: options.proposalId } : {}),
+      { fromBlock: 0 });
     /**
      * get the proposals for the given beneficiary
      */
-    let proposals: Array<ContributionProposal>;
-    proposalsFetcher.get(async (error: Error, props: Promise<Array<ContributionProposal>>) => {
-      proposals =
-        (await props).filter((p: ContributionProposal) => p.beneficiaryAddress === options.beneficiaryAddress);
-    });
+    const proposals = (await proposalsFetcher.get())
+      .filter((p: ContributionProposal) => p.beneficiaryAddress === options.beneficiaryAddress);
 
     const rewardsArray = new Array<ProposalRewards>();
 

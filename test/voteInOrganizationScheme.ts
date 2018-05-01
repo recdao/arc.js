@@ -1,19 +1,24 @@
 import { assert } from "chai";
 import {
-  AbsoluteVoteWrapper,
   Address,
   BinaryVoteResult,
-  DecodedLogEntryEvent,
   fnVoid,
-  Hash,
-  VoteProposalEventResult
-} from "../lib";
+  Hash
+} from "../lib/commonTypes";
+import { DecodedLogEntryEvent } from "../lib/contractWrapperBase";
+import { VotingMachineService } from "../lib/votingMachineService";
+import { AbsoluteVoteWrapper } from "../lib/wrappers/absoluteVote";
+import { VoteProposalEventResult } from "../lib/wrappers/commonEventInterfaces";
 import { SchemeRegistrarFactory, SchemeRegistrarWrapper } from "../lib/wrappers/schemeRegistrar";
-import { VoteInOrganizationProposal, VoteInOrganizationSchemeFactory } from "../lib/wrappers/voteInOrganizationScheme";
+import {
+  VotableVoteInOrganizationProposal,
+  VoteInOrganizationSchemeFactory,
+  VoteInOrganizationSchemeWrapper
+} from "../lib/wrappers/voteInOrganizationScheme";
 import * as helpers from "./helpers";
 
 const createProposal =
-  async (): Promise<{ proposalId: Hash, votingMachine: AbsoluteVoteWrapper, scheme: SchemeRegistrarWrapper }> => {
+  async (): Promise<{ proposalId: Hash, votingMachine: VotingMachineService, scheme: SchemeRegistrarWrapper }> => {
 
     const originalDao = await helpers.forgeDao({
       founders: [{
@@ -60,7 +65,7 @@ const createProposal =
     /**
      * get the voting machine that will be used to vote for this proposal
      */
-    const votingMachine = await helpers.getSchemeVotingMachine(originalDao, schemeRegistrar) as AbsoluteVoteWrapper;
+    const votingMachine = await helpers.getSchemeVotingMachine(originalDao, schemeRegistrar);
 
     assert.isOk(votingMachine);
     assert.isFalse(await helpers.voteWasExecuted(votingMachine, result.proposalId));
@@ -70,7 +75,7 @@ const createProposal =
 
 describe("VoteInOrganizationScheme", () => {
   let dao;
-  let voteInOrganizationScheme;
+  let voteInOrganizationScheme: VoteInOrganizationSchemeWrapper;
   beforeEach(async () => {
 
     dao = await helpers.forgeDao({
@@ -103,7 +108,7 @@ describe("VoteInOrganizationScheme", () => {
     voteInOrganizationScheme = await helpers.getDaoScheme(
       dao,
       "VoteInOrganizationScheme",
-      VoteInOrganizationSchemeFactory);
+      VoteInOrganizationSchemeFactory) as VoteInOrganizationSchemeWrapper;
 
     assert.isOk(voteInOrganizationScheme);
   });
@@ -124,21 +129,23 @@ describe("VoteInOrganizationScheme", () => {
     const proposalInfo = await voteInOrganizationScheme.proposeVote(options);
     const proposalInfo2 = await voteInOrganizationScheme.proposeVote(options);
 
-    const proposalService = voteInOrganizationScheme.createProposalService();
-
-    const proposals = await proposalService.getProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await (
+      await voteInOrganizationScheme.getVotableProposals(dao.avatar.address))(
+        {},
+        { fromBlock: 0 }
+      ).get();
 
     assert.equal(proposals.length, 2);
 
     assert.equal(
       proposals.filter(
-        (p: VoteInOrganizationProposal) => p.proposalId === proposalInfo.proposalId).length,
+        (p: VotableVoteInOrganizationProposal) => p.proposalId === proposalInfo.proposalId).length,
       1,
       "first proposal not found");
 
     assert.equal(
       proposals.filter(
-        (p: VoteInOrganizationProposal) => p.proposalId === proposalInfo2.proposalId).length,
+        (p: VotableVoteInOrganizationProposal) => p.proposalId === proposalInfo2.proposalId).length,
       1,
       "second proposal not found");
   });
@@ -177,7 +184,7 @@ describe("VoteInOrganizationScheme", () => {
     /**
      * confirm that a vote was cast by the original DAO's scheme
      */
-    const originalVoteEvent = proposalInfo.votingMachine.contract.VoteProposal({}, { fromBlock: 0 });
+    const originalVoteEvent = proposalInfo.votingMachine.VoteProposal({}, { fromBlock: 0 });
 
     await new Promise(async (resolve: fnVoid): Promise<void> => {
       originalVoteEvent.get((err: Error, eventsArray: Array<DecodedLogEntryEvent<VoteProposalEventResult>>) => {

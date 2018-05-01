@@ -84,8 +84,9 @@ describe("GenesisProtocol", () => {
 
     const proposalId2 = await createProposal();
 
-    const proposals = await genesisProtocol.createProposalService()
-      .getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await genesisProtocol.VotableProposals(
+      { _avatar: dao.avatar.address, _proposalId: proposalId2 },
+      { fromBlock: 0 }).get();
 
     // TODO: This should be === 2.  Should be fixed in next Arc version
     assert(proposals.length >= 2, `Should have found 2 proposals`);
@@ -105,7 +106,9 @@ describe("GenesisProtocol", () => {
     const proposalId2 = await createProposal();
     await voteProposal(proposalId2, 1);
 
-    let proposals = await genesisProtocol.getExecutedDaoProposals({ avatar: dao.avatar.address });
+    let proposals = await genesisProtocol.ExecutedProposals(
+      { _avatar: dao.avatar.address, _proposalId: proposalId2 },
+      { fromBlock: 0 }).get();
 
     // TODO: This should be === 2.  Should be fixed in next Arc version
     assert(proposals.length >= 2, "Should have found 2 proposals");
@@ -114,7 +117,9 @@ describe("GenesisProtocol", () => {
     assert(proposals.filter((p: ExecutedGenesisProposal) => p.proposalId === proposalId2).length,
       "proposalId2 not found");
 
-    proposals = await genesisProtocol.getExecutedDaoProposals({ avatar: dao.avatar.address, proposalId: proposalId2 });
+    proposals = await genesisProtocol.ExecutedProposals(
+      { _avatar: dao.avatar.address, _proposalId: proposalId2 },
+      { fromBlock: 0 }).get();
 
     assert.equal(proposals.length, 1, "Should have found 1 proposals");
     assert(proposals[0].proposalId === proposalId2, "proposalId2 not found");
@@ -170,7 +175,7 @@ describe("GenesisProtocol", () => {
     /**
      * get the voting machine to use to vote for this proposal
      */
-    const votingMachine = await helpers.getSchemeVotingMachine(dao, schemeRegistrar, "GenesisProtocol");
+    const votingMachine = await helpers.getSchemeVotingMachine(dao, schemeRegistrar);
 
     assert.isOk(votingMachine);
     assert.equal(votingMachine.constructor.name,

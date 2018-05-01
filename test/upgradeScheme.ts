@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { BinaryVoteResult } from "../lib";
+import { BinaryVoteResult } from "../lib/commonTypes";
 import { Utils } from "../lib/utils";
 import { UpgradeSchemeFactory, UpgradeSchemeWrapper } from "../lib/wrappers/upgradeScheme";
 import * as helpers from "./helpers";
@@ -50,9 +50,10 @@ describe("UpgradeScheme", () => {
 
     const proposalId = result.proposalId;
 
-    const proposalService = upgradeScheme.createProposalServiceUpgradeUpgradeScheme();
-
-    const proposals = await proposalService.getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await (
+      await upgradeScheme.getVotableUpgradeUpgradeSchemeProposals(dao.avatar.address))(
+        {},
+        { fromBlock: 0 }).get();
 
     assert.equal(proposals.length, 1);
 
@@ -82,9 +83,11 @@ describe("UpgradeScheme", () => {
 
     const proposalId = result.proposalId;
 
-    const proposalService = upgradeScheme.createProposalServiceUpgradeController();
-
-    const proposals = await proposalService.getVotableProposals({ avatarAddress: dao.avatar.address });
+    const proposals = await (
+      await upgradeScheme.getVotableUpgradeControllerProposals(dao.avatar.address))(
+        {},
+        { fromBlock: 0 }
+      ).get();
 
     assert.equal(proposals.length, 1);
 

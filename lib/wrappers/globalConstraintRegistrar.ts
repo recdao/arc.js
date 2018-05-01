@@ -98,12 +98,16 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
     Promise<EntityFetcherFactory<VotableGlobalConstraintProposal, NewGlobalConstraintsProposalEventResult>> {
 
     return this.proposalService.getProposalEvents(
-      this.NewGlobalConstraintsProposal,
-      async (args: NewGlobalConstraintsProposalEventResult): Promise<VotableGlobalConstraintProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.NewGlobalConstraintsProposal,
+        transformEventCallback:
+          async (args: NewGlobalConstraintsProposalEventResult): Promise<VotableGlobalConstraintProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   /**
@@ -114,12 +118,16 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
     Promise<EntityFetcherFactory<VotableGlobalConstraintProposal, RemoveGlobalConstraintsProposalEventResult>> {
 
     return this.proposalService.getProposalEvents(
-      this.RemoveGlobalConstraintsProposal,
-      async (args: RemoveGlobalConstraintsProposalEventResult): Promise<VotableGlobalConstraintProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.RemoveGlobalConstraintsProposal,
+        transformEventCallback:
+          async (args: RemoveGlobalConstraintsProposalEventResult): Promise<VotableGlobalConstraintProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableGlobalConstraintProposal> {

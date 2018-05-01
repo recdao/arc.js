@@ -167,12 +167,16 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
     }
 
     return this.proposalService.getProposalEvents(
-      this.NewSchemeProposal,
-      async (args: NewSchemeProposalEventResult): Promise<VotableSchemeRegistrarProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.NewSchemeProposal,
+        transformEventCallback:
+          async (args: NewSchemeProposalEventResult): Promise<VotableSchemeRegistrarProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   /**
@@ -187,12 +191,16 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
     }
 
     return this.proposalService.getProposalEvents(
-      this.RemoveSchemeProposal,
-      async (args: RemoveSchemeProposalEventResult): Promise<VotableSchemeRegistrarProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
-      },
-      true,
-      await this.getVotingMachineService(avatarAddress));
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.RemoveSchemeProposal,
+        transformEventCallback:
+          async (args: RemoveSchemeProposalEventResult): Promise<VotableSchemeRegistrarProposal> => {
+            return this.getVotableProposal(args._avatar, args._proposalId);
+          },
+        votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableSchemeRegistrarProposal> {

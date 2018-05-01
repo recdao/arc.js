@@ -19,11 +19,13 @@ export class Web3EventService {
    * @param eventName - Name of the event like "NewProposal"
    * @param preProcessEvent - optionally supply this to modify the err and log arguments before they are
    * passed to the `get`/`watch` callback.
+   * @param baseArgFilter arg filter to always merge into any supplied argFilter.
    */
   public createEventFetcherFactory<TEventArgs>(
     eventName: string,
     contractWrapper: HasContract,
-    preProcessEvent?: PreProcessEventCallback<TEventArgs>
+    preProcessEvent?: PreProcessEventCallback<TEventArgs>,
+    baseArgFilter: any = {}
   ): EventFetcherFactory<TEventArgs> {
 
     if (!eventName) {
@@ -62,7 +64,8 @@ export class Web3EventService {
        * Otherwise `baseEventCallback` will here be undefined and caller must use `get` and `watch`.
        */
       const baseEvent: EventFetcher<TEventArgs> =
-        contractWrapper.contract[eventName](argFilter, filterObject, baseEventCallback);
+        contractWrapper.contract[eventName](
+          Object.assign(argFilter, baseArgFilter), filterObject, baseEventCallback);
 
       /**
        * return the fetcher
@@ -97,17 +100,21 @@ export class Web3EventService {
    * `EntityFetcherFactory<TEntity, TEventArgs>`.  So whenever a web3 event
    * is received by the given `EventFetcherFactory`, we transform the `log` array, each of whose
    * items contains `args` of type `TEventArgs`, into `Array<TEntities>`.
+   * Note that the callback parameter of `EntityFetcher.get` is optional; you
+   * may alternatively obtain the promise of a `Array<TEntity>` from the return value
+   * of `get`.
    * @param eventFetcherFactory
    * @param transformEventCallback Function to convert an instance of TEventArgs into
    * the promise of an instance of TEntity.  If it returns `undefined` then no entity
    * is returned for that event, so this is a programatic way in which events
    * can be filtered.
    * @param givenCallback Function that will be invoked upon the receipt of each event,
-   * accepting the promise of an array of TEntity.
+   * @param baseArgFilter arg filter to always merge into any supplied argFilter.
    */
   public createEntityFetcherFactory<TEntity, TEventArgs>(
     eventFetcherFactory: EventFetcherFactory<TEventArgs>,
-    transformEventCallback: TransformEventCallback<TEntity, TEventArgs>
+    transformEventCallback: TransformEventCallback<TEntity, TEventArgs>,
+    baseArgFilter: any = {}
   ): EntityFetcherFactory<TEntity, TEventArgs> {
 
     if (!eventFetcherFactory) {
@@ -126,28 +133,31 @@ export class Web3EventService {
 
       // handler that takes the events and issues givenCallback appropriately
       const handleEvent =
-        (error: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>, callback: EntityCallback<TEntity>): void => {
+        (error: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>, callback?: EntityCallback<TEntity>):
+          Promise<Array<TEntity>> => {
 
           const promiseOfEntities: Promise<Array<TEntity>> =
             new Promise(
               async (resolve: (result: Array<TEntity>) => void, reject: (error: Error) => void): Promise<void> => {
 
                 const entities = new Array<TEntity>();
-                if (!!error) {
-                  // transform all the log entries into entities
-                  log.forEach(async (event: DecodedLogEntryEvent<TEventArgs>): Promise<void> => {
-                    const promise = transformEventCallback(event.args);
-                    if (promise) {
-                      entities.push(await promise);
-                    }
-                  });
-                  resolve(entities);
-                } else {
-                  reject(error);
+                if (error) {
+                  return reject(error);
                 }
+                // transform all the log entries into entities
+                for (const event of log) {
+                  const transformedEntity = await transformEventCallback(event.args);
+                  if (typeof transformedEntity !== "undefined") {
+                    entities.push(transformedEntity);
+                  }
+                }
+                resolve(entities);
               });
           // invoke the given callback with the promise of an array of entities
-          callback(error, promiseOfEntities);
+          if (callback) {
+            callback(error, promiseOfEntities);
+          }
+          return promiseOfEntities;
         };
 
       let baseEventCallback: EventCallback<TEventArgs>;
@@ -163,7 +173,8 @@ export class Web3EventService {
        * If `givenCallback` is defined then this will start watching immediately using `baseEventCallback`.
        * Otherwise `baseEventCallback` will here be undefined and caller must use `get` and `watch`.
        */
-      const baseFetcher: EventFetcher<TEventArgs> = eventFetcherFactory(argFilter, filterObject, baseEventCallback);
+      const baseFetcher: EventFetcher<TEventArgs> = eventFetcherFactory(
+        Object.assign(argFilter, baseArgFilter), filterObject, baseEventCallback);
 
       /**
        * return the fetcher
@@ -172,10 +183,16 @@ export class Web3EventService {
 
         transformEventCallback,
 
-        get(callback?: EntityCallback<TEntity>): void {
-          baseFetcher.get((error: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>) => {
-            handleEvent(error, log, callback);
-          });
+        get(callback?: EntityCallback<TEntity>): Promise<Array<TEntity>> {
+          return new Promise<Array<TEntity>>(
+            (resolve: (result: Array<TEntity>) => void, reject: (error: Error) => void): void => {
+              baseFetcher.get(async (error: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>): Promise<void> => {
+                if (error) {
+                  return reject(error);
+                }
+                resolve(await handleEvent(error, log, callback));
+              });
+            });
         },
 
         watch(callback?: EntityCallback<TEntity>): void {
@@ -205,11 +222,14 @@ export class Web3EventService {
 
     const fetcher = entityFetcherFactory();
 
-    // `anys` are to satisfy the compiler
-    fetcher.transformEventCallback = async (entity: any): Promise<any> => {
-      const promise = fetcher.transformEventCallback(entity as TEntityOriginalSrc) as Promise<TEntitySrc> | void;
-      if (promise) {
-        return transformEventCallback(await promise) as Promise<TEntityDest> | void;
+    /**
+     * replace the existing transformEventCallback with the new one that will invoke the old one
+     */
+    (fetcher.transformEventCallback as any) = async (entity: TEntityOriginalSrc): Promise<TEntityDest | undefined> => {
+      const transformedEntity =
+        await (fetcher.transformEventCallback(entity as TEntityOriginalSrc) as Promise<TEntitySrc | undefined>);
+      if (typeof transformedEntity !== "undefined") {
+        return transformEventCallback(transformedEntity) as Promise<TEntityDest | undefined>;
       }
     };
 
@@ -280,7 +300,7 @@ export interface EventPreProcessorReturn<TEventArgs> { error: Error; log: Array<
 export type PreProcessEventCallback<TEventArgs> =
   (error: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>) => EventPreProcessorReturn<TEventArgs>;
 
-export type TransformEventCallback<TDest, TSrc> = (args: TSrc) => Promise<TDest> | void;
+export type TransformEventCallback<TDest, TSrc> = (args: TSrc) => Promise<TDest | undefined>;
 
 /**
  * Function that returns an `EntityFetcher<TEntity>`.
@@ -310,15 +330,17 @@ export type EntityFetcherFactory<TDest, TSrc> =
 
 export type EntityCallback<TEntity> = (error: Error, log: Promise<Array<TEntity>>) => void;
 
-export type EntityFetcherHandler<TEntity> = (callback: EntityCallback<TEntity>) => void;
-
 /**
  * Returned by EntityFetcherFactory<TDest, TSrc>.
  */
 export interface EntityFetcher<TDest, TSrc> {
   transformEventCallback: TransformEventCallback<TDest, TSrc>;
-  get: EntityFetcherHandler<TDest>;
-  watch: EntityFetcherHandler<TDest>;
+  /**
+   * Note that `callback` is optional -- you may alternatively obtain the promise
+   * of a `Array<TEntity>` from the return value of `get`.
+   */
+  get: (callback?: EntityCallback<TDest>) => Promise<Array<TDest>>;
+  watch: (callback: EntityCallback<TDest>) => void;
   stopWatching(): void;
 }
 

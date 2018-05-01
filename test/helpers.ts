@@ -3,7 +3,15 @@ import { assert } from "chai";
 import { Address, fnVoid, Hash, SchemeWrapper } from "../lib/commonTypes";
 import { ConfigService } from "../lib/configService";
 import { DAO, NewDaoConfig } from "../lib/dao";
-import { ContractWrapperBase, ContractWrapperFactory, ContributionRewardWrapper, InitializeArcJs } from "../lib/index";
+import {
+  ContractWrapperBase,
+  ContractWrapperFactory,
+  ContributionRewardWrapper,
+  InitializeArcJs,
+  ProposalGeneratorBase,
+  VotingMachineService,
+  ArcTransactionResult
+} from "../lib/index";
 import { LoggingService, LogLevel } from "../lib/loggingService";
 import { Utils } from "../lib/utils";
 import { SchemeRegistrarFactory, SchemeRegistrarWrapper } from "../lib/wrappers/schemeRegistrar";
@@ -112,32 +120,22 @@ export async function getSchemeVotingMachineParametersHash(dao: DAO, scheme: Sch
 
 export async function getSchemeVotingMachine(
   dao: DAO,
-  scheme: SchemeWrapper,
-  votingMachineName?: string): Promise<ContractWrapperBase> {
-  const votingMachineAddress = (await scheme.getSchemeParameters(dao.avatar.address)).votingMachineAddress;
-  votingMachineName = votingMachineName || ConfigService.get("defaultVotingMachine");
-  return WrapperService.getContractWrapper(votingMachineName, votingMachineAddress);
+  scheme: ProposalGeneratorBase): Promise<VotingMachineService> {
+  return await scheme.getVotingMachineService(dao.avatar.address);
 }
 
 export async function getVotingMachineParameters(
-  votingMachine: ContractWrapperBase,
+  votingMachineService: VotingMachineService,
   votingMachineParamsHash: Hash): Promise<Array<any>> {
-  return votingMachine.contract.parameters(votingMachineParamsHash);
+  return votingMachineService.getParameters(votingMachineParamsHash);
 }
 
 /**
  * vote for the proposal given by proposalId.
  */
-export function vote(votingMachine: any, proposalId: Hash, theVote: number, voter: Address): Promise<void> {
+export function vote(votingMachine: VotingMachineService, proposalId: Hash, theVote: number, voter: Address): Promise<ArcTransactionResult> {
   voter = (voter ? voter : accounts[0]);
-  /**
-   * depending on whether or not the wrapper was passed, do the right thing
-   */
-  if (votingMachine.contract) {
-    return votingMachine.vote({ proposalId, vote: theVote, onBehalfOf: voter });
-  } else {
-    return votingMachine.vote(proposalId, theVote, { from: voter });
-  }
+  return votingMachine.vote(theVote, proposalId, voter);
 }
 
 export async function voteWasExecuted(votingMachine: any, proposalId: Hash): Promise<boolean> {

@@ -1,4 +1,5 @@
-import { Address, ContractWrapperBase } from ".";
+import { Address } from "./commonTypes";
+import { ContractWrapperBase } from "./contractWrapperBase";
 import { ProposalService } from "./proposalService";
 import { VotingMachineService, VotingMachineServiceFactory } from "./votingMachineService";
 import { Web3EventService } from "./web3EventService";

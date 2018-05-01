@@ -38,6 +38,11 @@ export class VotingMachineServiceFactory {
  * instead of `Promise<TransactionReceiptTruffle>`.
  */
 export class VotingMachineService implements HasContract {
+
+  public get address(): Address {
+    return (this.contract as any).address;
+  }
+
   /**
    * Get or watch events fired on the creation of a new proposal.
    */
@@ -76,6 +81,11 @@ export class VotingMachineService implements HasContract {
     public votingMachineAddress: Address,
     private web3EventService: Web3EventService) {
   }
+
+  public getParameters(votingMachineParamsHash: Hash): Promise<Array<any>> {
+    return (this.contract as any).parameters(votingMachineParamsHash);
+  }
+
   /**
    * Get or watch NewProposal events, filtering out proposals that are no longer votable.
    */
@@ -157,13 +167,15 @@ export class VotingMachineService implements HasContract {
    * Vote on behalf of msgSender
    * @param proposalId
    * @param vote
+   * @param onBehalfOf Optional agent on whose behalf to vote.
    */
-  public async vote(vote: number, proposalId: Hash): Promise<ArcTransactionResult> {
+  public async vote(vote: number, proposalId: Hash, onBehalfOf?: Address): Promise<ArcTransactionResult> {
     if (!proposalId) {
       throw new Error(`proposalId is not defined`);
     }
     this._validateVote(vote);
-    return new ArcTransactionResult(await this.contract.vote(proposalId, vote));
+    return new ArcTransactionResult(
+      await this.contract.vote(proposalId, vote, onBehalfOf ? { from: onBehalfOf } : undefined));
   }
 
   /**
@@ -292,12 +304,13 @@ export class VotingMachineService implements HasContract {
  */
 export interface IntVoteInterface {
   propose(numOfChoices: number,
-          proposalParameters: Hash,
-          avatar: Address,
-          execute: Address): Promise<TransactionReceiptTruffle>;
+    proposalParameters: Hash,
+    avatar: Address,
+    execute: Address): Promise<TransactionReceiptTruffle>;
   cancelProposal(proposalId: Hash): Promise<TransactionReceiptTruffle>;
   ownerVote(proposalId: Hash, vote: number, voter: Address): Promise<TransactionReceiptTruffle>;
-  vote(proposalId: Hash, vote: number): Promise<TransactionReceiptTruffle>;
+  // options is not part of Arc, rather is part of truffle. Declared here for onBehalfOf
+  vote(proposalId: Hash, vote: number, options?: { from: Address }): Promise<TransactionReceiptTruffle>;
   voteWithSpecifiedAmounts(
     proposalId: Hash,
     vote: number,

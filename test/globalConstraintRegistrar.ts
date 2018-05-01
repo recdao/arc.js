@@ -141,7 +141,7 @@ describe("GlobalConstraintRegistrar", () => {
     assert.equal(votingMachine.address, parametersForVotingInGCR[1]);
     // while the voteRegisterParams are known on the voting machine
     // and consist of [reputationSystem address, treshold percentage]
-    const voteRegisterParams = await votingMachine.contract.parameters(parametersForVotingInGCR[0]);
+    const voteRegisterParams = await votingMachine.getParameters(parametersForVotingInGCR[0]);
 
     const msg = "These parameters are not known the voting machine...";
     assert.notEqual(voteRegisterParams[0], "0x0000000000000000000000000000000000000000", msg);

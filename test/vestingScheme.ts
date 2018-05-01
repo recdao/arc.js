@@ -1,7 +1,9 @@
 import { assert } from "chai";
-import { DAO, Utils } from "../lib";
+import { DAO } from "../lib/dao";
+import { Utils } from "../lib/utils";
 import {
   Agreement,
+  AgreementProposal,
   ArcTransactionAgreementResult,
   CreateVestingAgreementConfig,
   VestingSchemeFactory,
@@ -65,20 +67,19 @@ describe("VestingScheme scheme", () => {
     const result2 = await vestingScheme.propose(Object.assign({ avatar: dao.avatar.address }, options));
     const proposalId2 = result2.proposalId;
 
-    const proposalService = vestingScheme.createProposalService();
-
-    let agreements = await proposalService.getVotableProposals({ avatarAddress: dao.avatar.address });
+    let agreements = await (await vestingScheme.getVotableProposals(dao.avatar.address))({}, { fromBlock: 0 }).get();
 
     assert(agreements.length === 2, "Should have found at 2 agreements");
-    assert(agreements.filter((a: Agreement) => a.proposalId === proposalId1).length, "proposalId1 not found");
-    assert(agreements.filter((a: Agreement) => a.proposalId === proposalId2).length, "proposalId2 not found");
+    assert(agreements.filter((a: AgreementProposal) => a.proposalId === proposalId1).length, "proposalId1 not found");
+    assert(agreements.filter((a: AgreementProposal) => a.proposalId === proposalId2).length, "proposalId2 not found");
 
-    agreements = await proposalService.getVotableProposals(
-      { avatarAddress: dao.avatar.address, eventArgsFilter: { _proposalId: proposalId2 } });
+    agreements = await
+      (await vestingScheme.getVotableProposals(dao.avatar.address))(
+        { _proposal: proposalId2 }, { fromBlock: 0 }).get();
 
     // TODO: this should be 1, see https://github.com/daostack/arc/issues/448
     assert.equal(agreements.length, 2, "Should have found 1 agreements");
-    assert(agreements.filter((p: Agreement) => p.proposalId === proposalId2).length, "proposalId2 not found");
+    assert(agreements.filter((p: AgreementProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
     assert.equal(agreements[0].beneficiaryAddress, accounts[1], "beneficiaryAddress not set properly on agreement");
   });
 

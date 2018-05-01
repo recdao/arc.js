@@ -28,45 +28,37 @@ export class ProposalService {
    * `EventFetcherFactory` for fetching the events and a callback to transform `TEventArgs` to a promise of `TProposal`.
    * @type TEventArgs The type of the `args` object in the event.
    * @type TProposal The type of object returned as a transformation of the `args` information in each event.
-   * @param proposalsEventFetcher Event fetcher to use to get or watch the event that supplies `TEventArgs`.
-   * @param transformEventCallback Returns Promise of `TProposal` given `TEventArgs` for the event.
-   * @param votableOnly True to only return votable proposals.  Default is false.
-   * @param votingMachineService You must supply this if `votableOnly` is true. Otherwise is ignored.
-   * can be filtered.
+   * @param options
    */
   public getProposalEvents<TProposal, TEventArgs extends EventHasPropertyId = EventHasPropertyId>(
-    proposalsEventFetcher: EventFetcherFactory<TEventArgs>,
-    transformEventCallback: TransformEventCallback<TProposal, TEventArgs>,
-    votableOnly: boolean = false,
-    votingMachineService?: VotingMachineService)
+    options: GetProposalEventsOptions<TProposal, TEventArgs>)
     : EntityFetcherFactory<TProposal, TEventArgs> {
 
-    if (!transformEventCallback) {
+    if (!options.transformEventCallback) {
       throw new Error("transformEventCallback must be supplied");
     }
 
-    if (!proposalsEventFetcher) {
+    if (!options.proposalsEventFetcher) {
       throw new Error("proposalsEventFetcher must be supplied");
     }
 
-    if (votableOnly && !votingMachineService) {
+    const votableOnly = !!options.votableOnly;
+    if (votableOnly && !options.votingMachineService) {
       throw new Error("votingMachineService must be supplied when votableOnly is true");
     }
 
     return this.web3EventService.createEntityFetcherFactory<TProposal, TEventArgs>(
-      proposalsEventFetcher,
+      options.proposalsEventFetcher,
       async (args: TEventArgs): Promise<TProposal> => {
 
         let isVotable = true;
 
         if (votableOnly) {
-          const proposalId = args._proposalId;
-          isVotable = await votingMachineService.isVotable(proposalId);
+          isVotable = await options.votingMachineService.isVotable(args._proposalId);
         }
-        if (isVotable) {
-          return transformEventCallback(args) as Promise<TProposal>; // is | void too
-        }
-      });
+        return isVotable ? options.transformEventCallback(args) : Promise.resolve(undefined);
+      },
+      options.baseArgFilter);
   }
 
   /**
@@ -160,4 +152,29 @@ export interface ExecutedProposal {
    * The total reputation in the DAO at the time the proposal was executed
    */
   totalReputation: BigNumber;
+}
+
+export interface GetProposalEventsOptions<TProposal, TEventArgs extends EventHasPropertyId = EventHasPropertyId> {
+  /**
+   * Event fetcher to use to get or watch the event that supplies `TEventArgs`.
+   */
+  proposalsEventFetcher: EventFetcherFactory<TEventArgs>;
+  /**
+   * Returns Promise of `TProposal` given `TEventArgs` for the event.  Return of `undefined` will be ignored, not
+   * passed-on to the caller.
+   */
+  transformEventCallback: TransformEventCallback<TProposal, TEventArgs>;
+  /**
+   * Optional to filter events on the given filter, like `{ _avatar: [anAddress] }`.
+   * This will be merged with any filter that the caller provides when creating the EntityFetcher.
+   */
+  baseArgFilter?: any;
+  /**
+   * True to only return votable proposals.  Default is false.
+   */
+  votableOnly?: boolean;
+  /**
+   * You must supply this if `votableOnly` is true. Otherwise is ignored.
+   */
+  votingMachineService?: VotingMachineService;
 }
