@@ -9,6 +9,7 @@ export interface NewProposalEventResult {
    */
   _proposalId: Hash;
   _proposer: Address;
+  _avatar: Address;
 }
 
 /**

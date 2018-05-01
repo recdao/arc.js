@@ -308,31 +308,36 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
   }
 
   /**
-   * Returns a Promise of an EntityFetcherFactory for votable ContributionProposals.
+   * EntityFetcherFactory for votable ContributionProposals.
    * @param avatarAddress
    */
-  public async getVotableProposalsFactory():
+  public async getVotableProposals(avatarAddress: Address):
     Promise<EntityFetcherFactory<ContributionProposal, NewContributionProposalEventResult>> {
 
-    return this.web3EventService.createEntityFetcherFactory<ContributionProposal, NewContributionProposalEventResult>(
+    if (!avatarAddress) {
+      throw new Error("avatarAddress is not set");
+    }
+
+    return this.proposalService.getProposalEvents(
       this.NewContributionProposal,
       async (args: NewContributionProposalEventResult): Promise<ContributionProposal> => {
-        return this.getProposal(args._avatar, args._proposalId);
-      });
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
   /**
-   * Returns a Promise of an EntityFetcherFactory for executed ContributionProposals.
-   * Note that the ContributionProposals contract retains the original proposal after execution.
+   * EntityFetcherFactory for executed ContributionProposals.
+   * The Arc ContributionProposals contract retains the original proposal struct after execution.
    * @param avatarAddress
    */
-  public async getExecutedProposalsFactory():
-    Promise<EntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>> {
+  public get ExecutedProposals(): EntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult> {
 
     return this.web3EventService.createEntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>(
       this.ProposalExecuted,
-      async (args: ProposalExecutedEventResult): Promise<ContributionProposal> => {
-        return this.getProposal(args._avatar, args._proposalId);
+      (args: ProposalExecutedEventResult): Promise<ContributionProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
       });
   }
 
@@ -360,20 +365,12 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
     if (!options.beneficiaryAddress) {
       throw new Error("beneficiaryAddress is not defined");
     }
-
     /**
-     * Get the factory for a `ProposalExecuted` event fetcher for the given avatar,
-     * returning ContributionReward.
+     * Fetch from block 0 for the given avatar
      */
-    const executedProposalsFetcherFactory = await this.getExecutedProposalsFactory();
-
+    const proposalsFetcher = this.ExecutedProposals({ _avatar: options.avatar }, { fromBlock: 0 });
     /**
-     * Fetch from block 0 and the given avatar
-     */
-    const proposalsFetcher = executedProposalsFetcherFactory({ _avatar: options.avatar }, { fromBlock: 0 });
-
-    /**
-     * get the proposals
+     * get the proposals for the given beneficiary
      */
     let proposals: Array<ContributionProposal>;
     proposalsFetcher.get(async (error: Error, props: Promise<Array<ContributionProposal>>) => {
@@ -425,13 +422,9 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase {
     );
   }
 
-  public async getProposal(avatarAddress: Address, proposalId: Hash): Promise<ContributionProposal> {
+  public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<ContributionProposal> {
     const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
     return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
-  }
-
-  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
   }
 
   public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
@@ -518,7 +511,6 @@ export interface NewContributionProposalEventResult {
    */
   _proposalId: Hash;
   _reputationChange: BigNumber;
-  _rewards: Array<BigNumber>;
 }
 
 export interface RedeemEtherEventResult {

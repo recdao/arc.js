@@ -4,7 +4,6 @@ import { VotingMachineService } from "./votingMachineService";
 import {
   EntityFetcherFactory,
   EventFetcherFactory,
-  EventFetcherFilterObject,
   TransformEventCallback,
   Web3EventService
 } from "./web3EventService";
@@ -30,13 +29,16 @@ export class ProposalService {
    * @type TEventArgs The type of the `args` object in the event.
    * @type TProposal The type of object returned as a transformation of the `args` information in each event.
    * @param proposalsEventFetcher Event fetcher to use to get or watch the event that supplies `TEventArgs`.
-   * @param transformEventCallback Returns Promise of `TProposal` given `TEventArgs` for the event.  If it
-   * returns `undefined` then no entity is returned for that event, so this is a programatic way in which events
+   * @param transformEventCallback Returns Promise of `TProposal` given `TEventArgs` for the event.
+   * @param votableOnly True to only return votable proposals.  Default is false.
+   * @param votingMachineService You must supply this if `votableOnly` is true. Otherwise is ignored.
    * can be filtered.
    */
   public getProposalEvents<TProposal, TEventArgs extends EventHasPropertyId = EventHasPropertyId>(
     proposalsEventFetcher: EventFetcherFactory<TEventArgs>,
-    transformEventCallback: TransformEventCallback<TProposal, TEventArgs>)
+    transformEventCallback: TransformEventCallback<TProposal, TEventArgs>,
+    votableOnly: boolean = false,
+    votingMachineService?: VotingMachineService)
     : EntityFetcherFactory<TProposal, TEventArgs> {
 
     if (!transformEventCallback) {
@@ -47,10 +49,23 @@ export class ProposalService {
       throw new Error("proposalsEventFetcher must be supplied");
     }
 
+    if (votableOnly && !votingMachineService) {
+      throw new Error("votingMachineService must be supplied when votableOnly is true");
+    }
+
     return this.web3EventService.createEntityFetcherFactory<TProposal, TEventArgs>(
       proposalsEventFetcher,
-      (args: TEventArgs): Promise<TProposal> => {
-        return transformEventCallback(args);
+      async (args: TEventArgs): Promise<TProposal> => {
+
+        let isVotable = true;
+
+        if (votableOnly) {
+          const proposalId = args._proposalId;
+          isVotable = await votingMachineService.isVotable(proposalId);
+        }
+        if (isVotable) {
+          return transformEventCallback(args) as Promise<TProposal>; // is | void too
+        }
       });
   }
 
@@ -69,6 +84,7 @@ export class ProposalService {
       (args: NewProposalEventResult): Promise<VotableProposal> => {
         return Promise.resolve(
           {
+            avatarAddress: args._avatar,
             numOfChoices: args._numOfChoices.toNumber(),
             paramsHash: args._paramsHash,
             proposalId: args._proposalId,
@@ -128,6 +144,7 @@ export interface VotableProposal {
   paramsHash: Hash;
   proposalId: Hash;
   proposerAddress: Address;
+  avatarAddress: Address;
 }
 
 export interface ExecutedProposal {

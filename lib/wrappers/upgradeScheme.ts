@@ -8,8 +8,7 @@ import {
 
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalGeneratorBase } from "../proposalGeneratorBase";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
@@ -102,10 +101,6 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
     );
   }
 
-  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
-  }
-
   public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.UpgradeScheme);
     return (overrideValue || DefaultSchemePermissions.UpgradeScheme) as SchemePermissions;
@@ -128,42 +123,43 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
   }
 
   /**
-   * Use proposalServiceUpgradeUpgradeScheme to work with proposals to change the upgrade scheme.
+   * EntityFetcherFactory for votable UpgradeSchemeProposal.
+   * @param avatarAddress
    */
-  public createProposalServiceUpgradeUpgradeScheme(): ProposalService<UpgradeSchemeProposal> {
-    return new ProposalService<UpgradeSchemeProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): UpgradeSchemeProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.ChangeUpgradeSchemeProposal,
-    });
+  public async getVotableUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableUpgradeSchemeProposal, ChangeUpgradeSchemeProposalEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      this.ChangeUpgradeSchemeProposal,
+      async (args: ChangeUpgradeSchemeProposalEventResult): Promise<VotableUpgradeSchemeProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
   /**
-   * Use proposalServiceUpgradeController to work with proposals to change the controller.
+   * EntityFetcherFactory for votable UpgradeSchemeProposal.
+   * @param avatarAddress
    */
-  public createProposalServiceUpgradeController(): ProposalService<UpgradeSchemeProposal> {
-    return new ProposalService<UpgradeSchemeProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): UpgradeSchemeProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.NewUpgradeProposal,
-    });
+  public async getVotableUpgradeControllerProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableUpgradeSchemeProposal, NewUpgradeProposalEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      this.NewUpgradeProposal,
+      async (args: NewUpgradeProposalEventResult): Promise<VotableUpgradeSchemeProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
-  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): UpgradeSchemeProposal {
+  public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableUpgradeSchemeProposal> {
+    const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
+    return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
+  }
+
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VotableUpgradeSchemeProposal {
     return {
       paramsUpgradingScheme: propsArray[1],
       proposalId,
@@ -240,7 +236,7 @@ export enum UpgradeSchemeProposalType {
   UpgradeScheme = 2,
 }
 
-export interface UpgradeSchemeProposal {
+export interface VotableUpgradeSchemeProposal {
   /**
    * Either a controller or an upgrade scheme.
    */

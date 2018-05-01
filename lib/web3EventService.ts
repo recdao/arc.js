@@ -205,10 +205,11 @@ export class Web3EventService {
 
     const fetcher = entityFetcherFactory();
 
-    fetcher.transformEventCallback = async (entity: TEntityOriginalSrc): Promise<any> => {
-      const promise = fetcher.transformEventCallback(entity);
+    // `anys` are to satisfy the compiler
+    fetcher.transformEventCallback = async (entity: any): Promise<any> => {
+      const promise = fetcher.transformEventCallback(entity as TEntityOriginalSrc) as Promise<TEntitySrc> | void;
       if (promise) {
-        return transformEventCallback(await promise);
+        return transformEventCallback(await promise) as Promise<TEntityDest> | void;
       }
     };
 

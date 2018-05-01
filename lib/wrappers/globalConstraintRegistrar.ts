@@ -7,8 +7,7 @@ import {
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalGeneratorBase } from "../proposalGeneratorBase";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase implements SchemeWrapper {
@@ -92,41 +91,40 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
   }
 
   /**
-   * Use proposalService to work with proposals to add global constraints.
+   * EntityFetcherFactory for votable GlobalConstraintProposal.
+   * @param avatarAddress
    */
-  public createProposalServiceAddConstraint(): ProposalService<GlobalConstraintProposal> {
-    return new ProposalService<GlobalConstraintProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): GlobalConstraintProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        async (options: AvatarProposalSpecifier): Promise<Array<any>> => {
-          const data = await this.contract.organizationsData(options.avatarAddress);
-          return data.proposals(options.proposalId);
-        },
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.NewGlobalConstraintsProposal,
-    });
+  public async getVotableAddGcProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableGlobalConstraintProposal, NewGlobalConstraintsProposalEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      this.NewGlobalConstraintsProposal,
+      async (args: NewGlobalConstraintsProposalEventResult): Promise<VotableGlobalConstraintProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
   /**
-   * Use proposalService to work with proposals to remove global constraints.
+   * EntityFetcherFactory for votable GlobalConstraintProposal.
+   * @param avatarAddress
    */
-  public createProposalServiceRemoveConstraint(): ProposalService<GlobalConstraintProposal> {
-    return new ProposalService<GlobalConstraintProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): GlobalConstraintProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        async (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          (await this.contract.organizationsData(options.avatarAddress)).proposals(options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.RemoveGlobalConstraintsProposal,
-    });
+  public async getVotableRemoveGcProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableGlobalConstraintProposal, RemoveGlobalConstraintsProposalEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      this.RemoveGlobalConstraintsProposal,
+      async (args: RemoveGlobalConstraintsProposalEventResult): Promise<VotableGlobalConstraintProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
+  }
+
+  public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableGlobalConstraintProposal> {
+    const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
+    return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
   }
 
   public async setParameters(params: StandardSchemeParams): Promise<ArcTransactionDataResult<Hash>> {
@@ -161,11 +159,7 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
     };
   }
 
-  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
-  }
-
-  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): GlobalConstraintProposal {
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VotableGlobalConstraintProposal {
     return {
       constraintAddress: propsArray[0],
       paramsHash: propsArray[1],
@@ -248,7 +242,7 @@ export enum GlobalConstraintProposalType {
   Remove = 2,
 }
 
-export interface GlobalConstraintProposal {
+export interface VotableGlobalConstraintProposal {
   /**
    * Address of the global constraint
    */

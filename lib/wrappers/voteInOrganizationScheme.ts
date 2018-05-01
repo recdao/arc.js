@@ -8,8 +8,7 @@ import {
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalGeneratorBase } from "../proposalGeneratorBase";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
@@ -60,25 +59,27 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
   }
 
   /**
-   * Use proposalService to work with VoteInOrganizationScheme proposals.
+   * EntityFetcherFactory for votable VoteInOrganizationProposal.
+   * @param avatarAddress
    */
-  public createProposalService(): ProposalService<VoteInOrganizationProposal> {
-    return new ProposalService<VoteInOrganizationProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): VoteInOrganizationProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsData(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.NewVoteProposal,
-    });
+  public async getVotableUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableVoteInOrganizationProposal, NewVoteProposalEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      this.NewVoteProposal,
+      async (args: NewVoteProposalEventResult): Promise<VotableVoteInOrganizationProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
-  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  public async getVotableProposal(
+    avatarAddress: Address,
+    proposalId: Hash): Promise<VotableVoteInOrganizationProposal> {
+
+    const proposalParams = await this.contract.organizationsData(avatarAddress, proposalId);
+    return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
   }
 
   public async setParameters(params: StandardSchemeParams): Promise<ArcTransactionDataResult<Hash>> {
@@ -113,7 +114,9 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
     };
   }
 
-  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VoteInOrganizationProposal {
+  private convertProposalPropsArrayToObject(
+    propsArray: Array<any>,
+    proposalId: Hash): VotableVoteInOrganizationProposal {
     return {
       originalIntVote: propsArray[0],
       originalNumOfChoices: propsArray[2].toNumber(),
@@ -149,7 +152,7 @@ export interface VoteInOrganizationProposeVoteConfig {
   originalProposalId: string;
 }
 
-export interface VoteInOrganizationProposal {
+export interface VotableVoteInOrganizationProposal {
   originalIntVote: Address;
   originalNumOfChoices: number;
   originalProposalId: Hash;

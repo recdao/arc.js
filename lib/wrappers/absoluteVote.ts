@@ -1,13 +1,14 @@
 "use strict";
 import { Address, Hash, VoteConfig } from "../commonTypes";
 
+import { ProposalService, VotableProposal, VotingMachineService } from "..";
 import {
   ArcTransactionDataResult,
   ArcTransactionResult,
   ContractWrapperBase
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ExecuteProposalEventResult, NewProposalEventResult, VoteProposalEventResult } from "./commonEventInterfaces";
 
 export class AbsoluteVoteWrapper extends ContractWrapperBase {
@@ -60,6 +61,23 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
           options.onBehalfOf ? { from: options.onBehalfOf } : undefined
         );
       });
+  }
+
+  /**
+   * EntityFetcherFactory for votable proposals.
+   * @param avatarAddress
+   */
+  public get VotableProposals():
+    EntityFetcherFactory<VotableProposal, NewProposalEventResult> {
+
+    const votingMachineService = new VotingMachineService(
+      this.contract,
+      this.address,
+      this.web3EventService);
+
+    const proposalService = new ProposalService(this.web3EventService);
+
+    return proposalService.getVotableProposals(votingMachineService);
   }
 
   public async setParameters(params: AbsoluteVoteParams): Promise<ArcTransactionDataResult<Hash>> {

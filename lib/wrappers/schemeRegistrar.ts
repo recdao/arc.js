@@ -7,8 +7,7 @@ import {
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalGeneratorBase } from "../proposalGeneratorBase";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements SchemeWrapper {
@@ -134,10 +133,6 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
     );
   }
 
-  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
-  }
-
   public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {
     // return overrideValue || Utils.numberToPermissionsString(DefaultSchemePermissions.SchemeRegistrar);
     return (overrideValue || DefaultSchemePermissions.SchemeRegistrar) as SchemePermissions;
@@ -161,42 +156,51 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
   }
 
   /**
-   * Use proposalServiceNewSchemes to work with proposals to add schemes.
+   * EntityFetcherFactory for votable SchemeRegistrarProposal.
+   * @param avatarAddress
    */
-  public createProposalServiceNewSchemes(): ProposalService<SchemeRegistrarProposal> {
-    return new ProposalService<SchemeRegistrarProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): SchemeRegistrarProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.NewSchemeProposal,
-    });
+  public async getVotableAddSchemeProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableSchemeRegistrarProposal, NewSchemeProposalEventResult>> {
+
+    if (!avatarAddress) {
+      throw new Error("avatarAddress is not set");
+    }
+
+    return this.proposalService.getProposalEvents(
+      this.NewSchemeProposal,
+      async (args: NewSchemeProposalEventResult): Promise<VotableSchemeRegistrarProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
   /**
-   * Use proposalServiceRemoveSchemes to work with proposals to add schemes.
+   * EntityFetcherFactory for votable SchemeRegistrarProposal.
+   * @param avatarAddress
    */
-  public createProposalServiceRemoveSchemes(): ProposalService<SchemeRegistrarProposal> {
-    return new ProposalService<SchemeRegistrarProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): SchemeRegistrarProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsProposals(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.RemoveSchemeProposal,
-    });
+  public async getVotableRemoveSchemeProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<VotableSchemeRegistrarProposal, RemoveSchemeProposalEventResult>> {
+
+    if (!avatarAddress) {
+      throw new Error("avatarAddress is not set");
+    }
+
+    return this.proposalService.getProposalEvents(
+      this.RemoveSchemeProposal,
+      async (args: RemoveSchemeProposalEventResult): Promise<VotableSchemeRegistrarProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
-  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): SchemeRegistrarProposal {
+  public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableSchemeRegistrarProposal> {
+    const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
+    return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
+  }
+
+  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VotableSchemeRegistrarProposal {
     return {
       parametersHash: propsArray[1],
       permissions: SchemePermissions.fromString(propsArray[3]),
@@ -301,7 +305,7 @@ export enum SchemeRegistrarProposalType {
   Remove = 2,
 }
 
-export interface SchemeRegistrarProposal {
+export interface VotableSchemeRegistrarProposal {
   schemeAddress: Address;
   parametersHash: Hash;
   proposalType: SchemeRegistrarProposalType;

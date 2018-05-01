@@ -11,11 +11,12 @@ import {
   TransactionReceiptTruffle,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
+import { ProposalGeneratorBase } from "../proposalGeneratorBase";
+import { ExecutedProposal } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
-import { ProposalExecutedEventResult } from "./commonEventInterfaces";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { ExecuteProposalEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class VestingSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
@@ -208,25 +209,45 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
   }
 
   /**
-   * Use proposalService to work with VestingScheme proposals.
+   * EntityFetcherFactory for votable Agreement.
+   * @param avatarAddress
    */
-  public createProposalService(): ProposalService<Agreement> {
-    return new ProposalService<Agreement>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): Agreement =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> =>
-          this.contract.organizationsData(options.avatarAddress, options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.AgreementProposal,
-    });
+  public async getVotableUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<AgreementProposal, ProposalExecutedEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      this.ProposalExecuted,
+      async (args: ProposalExecutedEventResult): Promise<AgreementProposal> => {
+        return this.getVotableProposal(args._avatar, args._proposalId);
+      },
+      true,
+      await this.getVotingMachineService(avatarAddress));
   }
 
-  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return (await this.getSchemeParameters(avatarAddress)).votingMachineAddress;
+  /**
+   * EntityFetcherFactory for executed Agreement.
+   * The Arc VestingScheme contract retains the original Agreement struct after execution.
+   * @param avatarAddress
+   */
+  public async getExecutedUpgradeUpgradeSchemeProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult>> {
+
+    // TODO return full Agreement instead of ExecutedProposal
+    return this.proposalService.getExecutedProposals(await this.getVotingMachineService(avatarAddress));
+  }
+
+  public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<AgreementProposal> {
+    const proposalParams = await this.contract.organizationsData(avatarAddress, proposalId);
+    const agreement = this.convertProposalPropsArrayToObject(proposalParams) as AgreementProposal;
+    agreement.proposalId = proposalId;
+    return agreement;
+  }
+
+  public async getAgreement(agreementId: number): Promise<Agreement> {
+    const agreementParams = await this.contract.agreements(agreementId);
+    const agreement = this.convertProposalPropsArrayToObject(agreementParams) as Agreement;
+    agreement.agreementId = agreementId;
+    return agreement;
   }
 
   public async setParameters(params: StandardSchemeParams): Promise<ArcTransactionDataResult<Hash>> {
@@ -314,7 +335,7 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
     }
   }
 
-  private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): Agreement {
+  private convertProposalPropsArrayToObject(propsArray: Array<any>): AgreementBase {
     return {
       amountPerPeriod: propsArray[4],
       beneficiaryAddress: propsArray[1],
@@ -322,7 +343,6 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
       collectedPeriods: propsArray[9],
       numOfAgreedPeriods: propsArray[6],
       periodLength: propsArray[5],
-      proposalId,
       returnOnCancelAddress: propsArray[2],
       signaturesReqToCancel: propsArray[8],
       startingBlock: propsArray[3],
@@ -492,7 +512,15 @@ export interface GetAgreementParams {
   agreementId?: number;
 }
 
-export interface Agreement {
+export interface AgreementProposal extends AgreementBase {
+  proposalId: Hash;
+}
+
+export interface Agreement extends AgreementBase {
+  agreementId: number;
+}
+
+export interface AgreementBase {
   amountPerPeriod: BigNumber.BigNumber;
   beneficiaryAddress: Address;
   cliffInPeriods: BigNumber.BigNumber;
@@ -503,5 +531,4 @@ export interface Agreement {
   signaturesReqToCancel: BigNumber.BigNumber;
   startingBlock: BigNumber.BigNumber;
   tokenAddress: Address;
-  proposalId: Hash;
 }

@@ -3,7 +3,7 @@ import { Address, HasContract, Hash } from "./commonTypes";
 import { ArcTransactionResult } from "./contractWrapperBase";
 import { Utils } from "./utils";
 import { IntVoteInterface, VotingMachineService } from "./votingMachineService";
-import { Web3EventService } from './web3EventService';
+import { Web3EventService } from "./web3EventService";
 
 /**
  * Instantiate a VotingMachineService given the address of any contract

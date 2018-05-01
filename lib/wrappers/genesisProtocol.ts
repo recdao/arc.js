@@ -18,10 +18,11 @@ import {
   ContractWrapperBase
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
-import { AvatarProposalSpecifier, ProposalService } from "../proposalService";
+import { ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { EventFetcherFactory, Web3EventService } from "../web3EventService";
+import { VotingMachineService } from "../votingMachineService";
+import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   ExecuteProposalEventResult,
   NewProposalEventResult,
@@ -688,60 +689,48 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   }
 
   /**
-   * Use proposalService to work with proposals creating used this ContributionReward.
+   * EntityFetcherFactory for votable GenesisProtocolProposal.
+   * @param avatarAddress
    */
-  public createProposalService(): ProposalService<GenesisProtocolProposal> {
-    return new ProposalService<GenesisProtocolProposal>({
-      contract: this.contract,
-      convertToProposal:
-        (proposalParams: Array<any>, opts: AvatarProposalSpecifier): GenesisProtocolProposal =>
-          this.convertProposalPropsArrayToObject(proposalParams, opts.proposalId),
-      getProposal:
-        (options: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(options.proposalId),
-      getVotingMachineAddress:
-        (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-      proposalsEventFetcher: this.NewProposal,
-    });
+  public get VotableProposals():
+    EntityFetcherFactory<GenesisProtocolProposal, NewProposalEventResult> {
+
+    const votingMachineService = new VotingMachineService(this.contract, this.address, this.web3EventService);
+    const proposalService = new ProposalService(this.web3EventService);
+
+    return proposalService.getProposalEvents(
+      this.NewProposal,
+      async (args: NewProposalEventResult): Promise<GenesisProtocolProposal> => {
+        return this.getProposal(args._proposalId);
+      },
+      true,
+      votingMachineService);
   }
 
   /**
-   * Return all executed GenesisProtocol proposals created under the given avatar.
-   * Filter by the optional proposalId.
+   * EntityFetcherFactory for executed ExecutedGenesisProposal.
+   * The Arc GenesisProtocol contract retains the original proposal struct after execution.
+   * @param avatarAddress
    */
-  public async getExecutedDaoProposals(
-    options: GetExecutedProposalsConfig = {} as GetExecutedProposalsConfig)
-    : Promise<Array<ExecutedGenesisProposal>> {
+  public get ExecutedProposals():
+    EntityFetcherFactory<ExecutedGenesisProposal, GenesisProtocolExecuteProposalEventResult> {
 
-    const proposalService =
-      new ProposalService<ExecutedGenesisProposal, GenesisProtocolExecuteProposalEventResult>({
+    return this.web3EventService
+      .createEntityFetcherFactory<ExecutedGenesisProposal, GenesisProtocolExecuteProposalEventResult>(
+        this.ExecuteProposal,
+        async (args: GenesisProtocolExecuteProposalEventResult): Promise<ExecutedGenesisProposal> => {
+          const proposal = await this.getProposal(args._proposalId);
+          return Object.assign(proposal, {
+            decision: args._decision.toNumber(),
+            executionState: args._executionState.toNumber(),
+            totalReputation: args._totalReputation,
+          });
+        });
+  }
 
-        contract: this.contract,
-        /**
-         * this doesn't convert to a GenesisProtocolProposal, rather it converts to a
-         * ExecutedGenesisProposal which contains a different set of information than the straight
-         * GenesisProtocolProposal.
-         */
-        convertToProposal:
-          (
-            proposalParams: Array<any>,
-            opts: AvatarProposalSpecifier & GenesisProtocolExecuteProposalEventResult
-          ): ExecutedGenesisProposal => {
-            return {
-              decision: opts._decision.toNumber(),
-              executionState: opts._executionState.toNumber(),
-              proposalId: opts._proposalId,
-              totalReputation: opts._totalReputation,
-            };
-          },
-        getProposal:
-          (opts: AvatarProposalSpecifier): Promise<Array<any>> => this.contract.proposals(opts.proposalId),
-        getVotingMachineAddress:
-          (avatarAddress: Address): Promise<Address> => this.getVotingMachineAddress(avatarAddress),
-        proposalsEventFetcher: this.ExecuteProposal,
-      });
-
-    return await proposalService.getVotableProposals(Object.assign({ avatar: options.avatar },
-      options.proposalId ? { eventArgsFilter: { _proposalId: options.proposalId } } : undefined));
+  public async getProposal(proposalId: Hash): Promise<GenesisProtocolProposal> {
+    const proposalParams = await this.contract.proposals(proposalId);
+    return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
   }
 
   /**
@@ -1312,16 +1301,6 @@ export interface GenesisProtocolExecuteProposalEventResult extends ExecutePropos
   _executionState: BigNumber;
 }
 
-export interface ExecutedGenesisProposal {
-  decision: BinaryVoteResult;
-  proposalId: Hash;
-  /**
-   * total reputation in the DAO at the time the proposal is created in the voting machine
-   */
-  totalReputation: BigNumber;
-  executionState: ExecutionState;
-}
-
 export enum ProposalState {
   None,
   Closed,
@@ -1349,6 +1328,15 @@ export const GetDefaultGenesisProtocolParameters = async (): Promise<GenesisProt
   };
 };
 
+export interface ExecutedGenesisProposal extends GenesisProtocolProposal {
+  decision: BinaryVoteResult;
+  /**
+   * total reputation in the DAO at the time the proposal is created in the voting machine
+   */
+  totalReputation: BigNumber;
+  executionState: ExecutionState;
+}
+
 export interface GenesisProtocolProposal {
   avatarAddress: Address;
   /**
@@ -1373,15 +1361,4 @@ export interface GenesisProtocolProposal {
   totalVotes: BigNumber;
   votersStakes: BigNumber;
   winningVote: number;
-}
-
-export interface GetExecutedProposalsConfig {
-  /**
-   * The avatar under which the proposals were created
-   */
-  avatar: Address;
-  /**
-   * Optionally filter on the given proposalId
-   */
-  proposalId?: Hash;
 }

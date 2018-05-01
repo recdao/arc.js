@@ -13,7 +13,9 @@ export abstract class ProposalGeneratorBase extends ContractWrapperBase {
     this.votingMachineServiceFactory = new VotingMachineServiceFactory(web3EventService);
   }
 
-  public abstract async getVotingMachineAddress(avatarAddress: Address): Promise<Address>;
+  public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
+    return (await this._getSchemeParameters(avatarAddress)).votingMachineAddress;
+  }
 
   public async getVotingMachineService(avatarAddress: Address): Promise<VotingMachineService> {
     const votingMachineAddress = await this.getVotingMachineAddress(avatarAddress);
