@@ -209,7 +209,7 @@ export class Web3EventService {
   }
 
   /**
-   * Convert the EntityFetcherFactory<TEntitySrc, any> into an
+   * Convert the EntityFetcherFactory<TEntitySrc, TEntityOriginalSrc> into an
    * EntityFetcherFactory<TEntityDest, TEntitySrc>.
    *
    * @param entityFetcherFactory

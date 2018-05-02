@@ -110,26 +110,9 @@ export class ProposalService {
   }
 }
 
-// export type PerProposalCallback<TProposal> = (proposal: TProposal) => void | Promise<boolean>;
-
 export interface EventHasPropertyId {
   _proposalId: Hash;
 }
-
-// export interface AvatarProposalSpecifier {
-//   /**
-//    * The avatar under which the proposal was created
-//    */
-//   avatarAddress: Address;
-//   /**
-//    * The desired proposalId
-//    */
-//   proposalId: Hash;
-//   /**
-//    * Extra properties
-//    */
-//   [x: string]: any;
-// }
 
 export interface VotableProposal {
   numOfChoices: number;

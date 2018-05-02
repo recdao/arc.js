@@ -78,6 +78,11 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
 
     const proposalService = new ProposalService(this.web3EventService);
 
+    /**
+     * TODO:  If we can't get events into IntVoteInterface, when we'll have to
+     * adapt AbsoluteVote.NewProposal.  (Note GenesisProtocol is already doing it
+     * that way.)
+     */
     return proposalService.getVotableProposals(votingMachineService);
   }
 
