@@ -15,14 +15,31 @@ export class ProposalVotingMachineServiceFactory {
   }
 
   /**
-   * Create a new VotingMachineService given a voting machine address
+   * Create a new ProposalVotingMachineService given a voting machine address and proposalId
    * @param votingMachineAddress
+   * @param proposalId
    */
   public async create(votingMachineAddress: Address, proposalId: Hash): Promise<ProposalVotingMachineService> {
     const contract = await Utils.requireContract("IntVoteInterface");
     return new ProposalVotingMachineService(
       await contract.at(votingMachineAddress),
       votingMachineAddress,
+      this.web3EventService,
+      proposalId);
+  }
+
+  /**
+   * Create a new ProposalVotingMachineService given a VotingMachineService and proposalId
+   * @param votingMachine
+   * @param proposalId
+   */
+  public async fromVotingMachine(
+    votingMachine: VotingMachineService,
+    proposalId: Hash): Promise<ProposalVotingMachineService> {
+
+    return new ProposalVotingMachineService(
+      votingMachine.contract,
+      votingMachine.address,
       this.web3EventService,
       proposalId);
   }

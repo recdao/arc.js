@@ -1,6 +1,7 @@
-import { Address } from "./commonTypes";
+import { Address, Hash } from "./commonTypes";
 import { ContractWrapperBase } from "./contractWrapperBase";
 import { ProposalService } from "./proposalService";
+import { ProposalVotingMachineService, ProposalVotingMachineServiceFactory } from "./proposalVotingMachineService";
 import { VotingMachineService, VotingMachineServiceFactory } from "./votingMachineService";
 import { Web3EventService } from "./web3EventService";
 
@@ -21,5 +22,14 @@ export abstract class ProposalGeneratorBase extends ContractWrapperBase {
   public async getVotingMachineService(avatarAddress: Address): Promise<VotingMachineService> {
     const votingMachineAddress = await this.getVotingMachineAddress(avatarAddress);
     return await this.votingMachineServiceFactory.create(votingMachineAddress);
+  }
+
+  public async getProposalVotingMachineService(
+    avatarAddress: Address,
+    proposalId: Hash): Promise<ProposalVotingMachineService> {
+
+    const factory = new ProposalVotingMachineServiceFactory(this.web3EventService);
+    const votingMachineAddress = await this.getVotingMachineAddress(avatarAddress);
+    return factory.create(votingMachineAddress, proposalId);
   }
 }
