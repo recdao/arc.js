@@ -24,10 +24,10 @@ import { Utils } from "../utils";
 import { VotingMachineService } from "../votingMachineService";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
-  ExecuteProposalEventResult,
   NewProposalEventResult,
   RedeemReputationEventResult,
   VoteProposalEventResult,
+  VotingMachineExecuteProposalEventResult,
 } from "./commonEventInterfaces";
 
 export class GenesisProtocolWrapper extends ContractWrapperBase implements SchemeWrapper {
@@ -1295,7 +1295,7 @@ export enum ExecutionState {
   BoostedBarCrossed = 4,
 }
 
-export interface GenesisProtocolExecuteProposalEventResult extends ExecuteProposalEventResult {
+export interface GenesisProtocolExecuteProposalEventResult extends VotingMachineExecuteProposalEventResult {
   /**
    * _executionState.toNumber() will give you a value from the enum `ExecutionState`
    */

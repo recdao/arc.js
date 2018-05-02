@@ -48,6 +48,8 @@ describe("GlobalConstraintRegistrar", () => {
     };
   };
 
+  // TODO: restore these tests when we can obtain proposals from GlobalConstraintRegistrar
+
   // it("can get added constraints", async () => {
 
   //   const result = await addGlobalConstraint();

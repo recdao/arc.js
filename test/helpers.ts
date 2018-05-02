@@ -10,9 +10,9 @@ import {
   ContractWrapperFactory,
   ContributionRewardWrapper,
   DecodedLogEntryEvent,
-  ExecuteProposalEventResult,
   InitializeArcJs,
   ProposalGeneratorBase,
+  VotingMachineExecuteProposalEventResult,
   VotingMachineService
 } from "../lib/index";
 import { LoggingService, LogLevel } from "../lib/loggingService";
@@ -168,7 +168,7 @@ export async function voteWasExecuted(votingMachine: VotingMachineService, propo
 
     const event = vmWrapper.ExecuteProposal({ _proposalId: proposalId }, { fromBlock: 0 });
     event.get(
-      (err: Error, events: Array<DecodedLogEntryEvent<ExecuteProposalEventResult>>): void => {
+      (err: Error, events: Array<DecodedLogEntryEvent<VotingMachineExecuteProposalEventResult>>): void => {
         if (err) {
           return reject(err);
         }

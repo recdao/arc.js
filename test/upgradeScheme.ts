@@ -57,8 +57,22 @@ describe("UpgradeScheme", () => {
 
     assert.equal(proposals.length, 1);
 
-    const proposal = proposals[0];
+    let proposal = proposals[0];
     assert.equal(proposal.proposalId, proposalId);
+
+    const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
+
+    await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
+
+    const executedProposals = await (await upgradeScheme.getExecutedProposals(dao.avatar.address))(
+      { _proposalId: proposalId }, { fromBlock: 0 }).get();
+
+    assert.equal(executedProposals.length, 1, "Executed proposal not found");
+
+    const executedProposal = executedProposals[0];
+
+    assert(executedProposal.proposalId === proposalId, "executed proposalId not found");
+
   });
 
   it("can get upgraded Controllers", async () => {

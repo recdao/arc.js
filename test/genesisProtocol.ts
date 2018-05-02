@@ -78,7 +78,7 @@ describe("GenesisProtocol", () => {
     executableTest = await ExecutableTest.deployed();
   });
 
-  it("can get proposals", async () => {
+  it("can get votable proposals", async () => {
 
     dao = await helpers.forgeDao({
       founders: [{

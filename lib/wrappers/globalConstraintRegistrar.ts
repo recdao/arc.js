@@ -8,7 +8,11 @@ import {
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalGeneratorBase } from "../proposalGeneratorBase";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
-import { ProposalDeletedEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
+import {
+  ProposalDeletedEventResult,
+  SchemeProposalExecuted,
+  SchemeProposalExecutedEventResult
+} from "./commonEventInterfaces";
 
 export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
@@ -22,7 +26,7 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
   /* tslint:disable:max-line-length */
   public NewGlobalConstraintsProposal: EventFetcherFactory<NewGlobalConstraintsProposalEventResult> = this.createEventFetcherFactory<NewGlobalConstraintsProposalEventResult>("NewGlobalConstraintsProposal");
   public RemoveGlobalConstraintsProposal: EventFetcherFactory<RemoveGlobalConstraintsProposalEventResult> = this.createEventFetcherFactory<RemoveGlobalConstraintsProposalEventResult>("RemoveGlobalConstraintsProposal");
-  public ProposalExecuted: EventFetcherFactory<ProposalExecutedEventResult> = this.createEventFetcherFactory<ProposalExecutedEventResult>("ProposalExecuted");
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
   public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
   /* tslint:enable:max-line-length */
 
@@ -126,6 +130,29 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
+  }
+
+  /**
+   * EntityFetcherFactory for executed proposals.
+   * @param avatarAddress
+   */
+  public async getExecutedProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<SchemeProposalExecuted, SchemeProposalExecutedEventResult>> {
+
+    return this.proposalService.getProposalEvents(
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.ProposalExecuted,
+        transformEventCallback:
+          (event: SchemeProposalExecutedEventResult): Promise<SchemeProposalExecuted> => {
+            return Promise.resolve({
+              avatarAddress: event._avatar,
+              proposalId: event._proposalId,
+              winningVote: event._param,
+            });
+          },
         votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }

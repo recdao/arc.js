@@ -12,10 +12,11 @@ export interface NewProposalEventResult {
   _avatar: Address;
 }
 
+// TODO: include _avatar?
 /**
  * fired by voting machines
  */
-export interface ExecuteProposalEventResult {
+export interface VotingMachineExecuteProposalEventResult {
   /**
    * the vote choice that won.
    */
@@ -30,6 +31,7 @@ export interface ExecuteProposalEventResult {
   _totalReputation: BigNumber;
 }
 
+// TODO: include _avatar?
 export interface VoteProposalEventResult {
   /**
    * indexed
@@ -76,7 +78,16 @@ export interface ProposalDeletedEventResult {
 /**
  * fired by schemes
  */
-export interface ProposalExecutedEventResult {
+export interface SchemeProposalExecuted {
+  avatarAddress: Address;
+  winningVote: number;
+  proposalId: Hash;
+}
+
+/**
+ * fired by schemes
+ */
+export interface SchemeProposalExecutedEventResult {
   /**
    * indexed
    */

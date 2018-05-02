@@ -8,7 +8,7 @@ import {
   TransformEventCallback,
   Web3EventService
 } from "./web3EventService";
-import { ExecuteProposalEventResult, NewProposalEventResult } from "./wrappers/commonEventInterfaces";
+import { NewProposalEventResult, VotingMachineExecuteProposalEventResult } from "./wrappers/commonEventInterfaces";
 
 /**
  * A single instance of ProposalService provides services relating to a single
@@ -59,7 +59,7 @@ export class ProposalService {
         const entity = await (
           ((!votableOnly || isVotable) ?
             options.transformEventCallback(args) :
-            Promise.resolve(undefined)) as Promise<(TProposal & ProposalEntity) | undefined>);
+            Promise.resolve(undefined)));
 
         if (entity && isVotable) {
           const factory = new ProposalVotingMachineServiceFactory(this.web3EventService);
@@ -73,7 +73,7 @@ export class ProposalService {
 
   /**
    * Returns promise of an EntityFetcherFactory for fetching votable proposals from the
-   * voting machine given by the address.  The proposals are returned as promises of instances
+   * given `VotingMachineService`. The proposals are returned as promises of instances
    * of `VotableProposal`.
    *
    * @param votingMachineAddress
@@ -98,17 +98,17 @@ export class ProposalService {
 
   /**
    * Returns promise of an EntityFetcherFactory for fetching executed proposals from the
-   * voting machine given by the address.  The proposals are returned as promises of instances
-   * of `ExecutedProposal`.
+   * given `VotingMachineService`.
+   * The proposals are returned as promises of instances of `ExecutedProposal`.
    *
    * @param votingMachineAddress
    */
   public getExecutedProposals(votingMachineService: VotingMachineService):
-    EntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult> {
+    EntityFetcherFactory<ExecutedProposal, VotingMachineExecuteProposalEventResult> {
 
-    return this.web3EventService.createEntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult>(
+    return this.web3EventService.createEntityFetcherFactory<ExecutedProposal, VotingMachineExecuteProposalEventResult>(
       votingMachineService.ExecuteProposal,
-      (args: ExecuteProposalEventResult): Promise<ExecutedProposal> => {
+      (args: VotingMachineExecuteProposalEventResult): Promise<ExecutedProposal> => {
         return Promise.resolve(
           {
             decision: args._decision.toNumber(),
@@ -132,6 +132,7 @@ export interface VotableProposal {
   avatarAddress: Address;
 }
 
+// TODO: include avatar address?
 export interface ExecutedProposal {
   /**
    * the vote choice that won.

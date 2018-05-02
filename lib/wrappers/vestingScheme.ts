@@ -12,11 +12,10 @@ import {
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalGeneratorBase } from "../proposalGeneratorBase";
-import { ExecutedProposal } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
-import { ExecuteProposalEventResult, ProposalExecutedEventResult } from "./commonEventInterfaces";
+import { SchemeProposalExecuted, SchemeProposalExecutedEventResult } from "./commonEventInterfaces";
 
 export class VestingSchemeWrapper extends ProposalGeneratorBase implements SchemeWrapper {
 
@@ -28,7 +27,7 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
    */
 
   /* tslint:disable:max-line-length */
-  public ProposalExecuted: EventFetcherFactory<ProposalExecutedEventResult> = this.createEventFetcherFactory<ProposalExecutedEventResult>("ProposalExecuted");
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
   public AgreementProposal: EventFetcherFactory<AgreementProposalEventResult> = this.createEventFetcherFactory<AgreementProposalEventResult>("AgreementProposal");
   public NewVestedAgreement: EventFetcherFactory<NewVestedAgreementEventResult> = this.createEventFetcherFactory<NewVestedAgreementEventResult>("NewVestedAgreement");
   public SignToCancelAgreement: EventFetcherFactory<SignToCancelAgreementEventResult> = this.createEventFetcherFactory<SignToCancelAgreementEventResult>("SignToCancelAgreement");
@@ -213,14 +212,14 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
    * @param avatarAddress
    */
   public async getVotableProposals(avatarAddress: Address):
-    Promise<EntityFetcherFactory<AgreementProposal, ProposalExecutedEventResult>> {
+    Promise<EntityFetcherFactory<AgreementProposal, SchemeProposalExecutedEventResult>> {
 
     return this.proposalService.getProposalEvents(
       {
         baseArgFilter: { _avatar: avatarAddress },
         proposalsEventFetcher: this.AgreementProposal,
         transformEventCallback:
-          async (args: ProposalExecutedEventResult): Promise<AgreementProposal> => {
+          async (args: SchemeProposalExecutedEventResult): Promise<AgreementProposal> => {
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
@@ -228,16 +227,28 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
       });
   }
 
+  // TODO: Return Agreement here when it is possible to obtain the agreementId from Arc.
   /**
-   * EntityFetcherFactory for executed Agreement.
-   * The Arc VestingScheme contract retains the original Agreement struct after execution.
+   * EntityFetcherFactory for executed proposals.
    * @param avatarAddress
    */
   public async getExecutedProposals(avatarAddress: Address):
-    Promise<EntityFetcherFactory<ExecutedProposal, ExecuteProposalEventResult>> {
+    Promise<EntityFetcherFactory<SchemeProposalExecuted, SchemeProposalExecutedEventResult>> {
 
-    // TODO return full Agreement instead of ExecutedProposal
-    return this.proposalService.getExecutedProposals(await this.getVotingMachineService(avatarAddress));
+    return this.proposalService.getProposalEvents(
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.ProposalExecuted,
+        transformEventCallback:
+          (event: SchemeProposalExecutedEventResult): Promise<SchemeProposalExecuted> => {
+            return Promise.resolve({
+              avatarAddress: event._avatar,
+              proposalId: event._proposalId,
+              winningVote: event._param,
+            });
+          },
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
+      });
   }
 
   public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<AgreementProposal> {

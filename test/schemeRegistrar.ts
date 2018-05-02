@@ -1,6 +1,6 @@
 import { assert } from "chai";
-import { AbsoluteVoteWrapper, WrapperService } from "../lib";
-import { DefaultSchemePermissions } from "../lib/commonTypes";
+import { AbsoluteVoteWrapper, DecodedLogEntryEvent, SchemeProposalExecutedEventResult, WrapperService } from "../lib";
+import { BinaryVoteResult, DefaultSchemePermissions } from "../lib/commonTypes";
 import { Utils } from "../lib/utils";
 import {
   SchemeRegistrarFactory,
@@ -205,5 +205,18 @@ describe("SchemeRegistrar", () => {
     assert.equal(proposalsRemove.length, 1, "Should have found 1 proposals");
     assert(proposalsRemove[0].proposalId === proposalToRemoveId, "proposalToRemoveId not found");
     assert.equal(proposalsRemove[0].proposalType, SchemeRegistrarProposalType.Remove);
+
+    const votingMachine = await schemeRegistrar.getVotingMachineService(dao.avatar.address);
+
+    await votingMachine.vote(BinaryVoteResult.Yes, proposalToRemoveId, accounts[1]);
+
+    const proposals = await (await schemeRegistrar.getExecutedProposals(dao.avatar.address))(
+      { _proposalId: proposalToRemoveId }, { fromBlock: 0 }).get();
+
+    assert.equal(proposals.length, 1);
+
+    const proposal = proposals[0];
+
+    assert(proposal.proposalId === proposalToRemoveId, "executed proposalId2 not found");
   });
 });

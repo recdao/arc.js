@@ -310,14 +310,15 @@ export type TransformEventCallback<TDest, TSrc> = (args: TSrc) => Promise<TDest 
 export type EntityFetcherFactory<TDest, TSrc> =
   (
     /**
-     * Values by which you wish to filter the logs, e.g.
+     * Arg values by which you wish to filter the web3 event logs, e.g.
      * `{'valueA': 1, 'valueB': [myFirstAddress, mySecondAddress]}`.
      *
-     * Note this applies to the underlying web3 event values, not to the transformed entities.
+     * Note this always applies to the underlying web3 event values
+     * not to property values of transformed entities.
      */
     argsFilter?: any,
     /**
-     * Additional filter options.  Typically something like `{ from: "latest" }`.
+     * Web3 event filter options.  Typically something like `{ from: "latest" }`.
      * Note if you don't want Arc.js to suppress duplicate events, set `suppressDups` to false.
      */
     filterObject?: EventFetcherFilterObject,

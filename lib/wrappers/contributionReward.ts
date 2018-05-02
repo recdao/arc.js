@@ -14,6 +14,7 @@ import {
   ArcTransactionDataResult,
   ArcTransactionProposalResult,
   ArcTransactionResult,
+  DecodedLogEntryEvent,
   StandardSchemeParams,
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
@@ -23,8 +24,8 @@ import { Utils } from "../utils";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   ProposalDeletedEventResult,
-  ProposalExecutedEventResult,
   RedeemReputationEventResult,
+  SchemeProposalExecutedEventResult,
 } from "./commonEventInterfaces";
 
 export class ContributionRewardWrapper extends ProposalGeneratorBase implements SchemeWrapper {
@@ -38,7 +39,7 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
 
   /* tslint:disable:max-line-length */
   public NewContributionProposal: EventFetcherFactory<NewContributionProposalEventResult> = this.createEventFetcherFactory<NewContributionProposalEventResult>("NewContributionProposal");
-  public ProposalExecuted: EventFetcherFactory<ProposalExecutedEventResult> = this.createEventFetcherFactory<ProposalExecutedEventResult>("ProposalExecuted");
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
   public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
   public RedeemReputation: EventFetcherFactory<RedeemReputationEventResult> = this.createEventFetcherFactory<RedeemReputationEventResult>("RedeemReputation");
   public RedeemEther: EventFetcherFactory<RedeemEtherEventResult> = this.createEventFetcherFactory<RedeemEtherEventResult>("RedeemEther");
@@ -337,12 +338,18 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
    * The Arc ContributionProposals contract retains the original proposal struct after execution.
    * @param avatarAddress
    */
-  public get ExecutedProposals(): EntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult> {
+  public async getExecutedProposals(avatarAddress: Address):
+    Promise<EntityFetcherFactory<ContributionProposal, SchemeProposalExecutedEventResult>> {
 
-    return this.web3EventService.createEntityFetcherFactory<ContributionProposal, ProposalExecutedEventResult>(
-      this.ProposalExecuted,
-      (args: ProposalExecutedEventResult): Promise<ContributionProposal> => {
-        return this.getVotableProposal(args._avatar, args._proposalId);
+    return this.proposalService.getProposalEvents(
+      {
+        baseArgFilter: { _avatar: avatarAddress },
+        proposalsEventFetcher: this.ProposalExecuted,
+        transformEventCallback:
+          (event: SchemeProposalExecutedEventResult): Promise<ContributionProposal> => {
+            return this.getVotableProposal(avatarAddress, event._proposalId);
+          },
+        votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }
 
@@ -367,14 +374,31 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
     /**
      * Fetch from block 0 for the given avatar
      */
-    const proposalsFetcher = this.ExecutedProposals(
+    const proposalsFetcher = this.ProposalExecuted(
       Object.assign({ _avatar: options.avatar }, options.proposalId ? { _proposalId: options.proposalId } : {}),
       { fromBlock: 0 });
     /**
-     * get the proposals for the given beneficiary
+     * get the proposals for the given beneficiary.
+     * We don't use getExecutedProposals because we want to be able to work
+     * across avatars.
      */
-    const proposals = (await proposalsFetcher.get())
-      .filter((p: ContributionProposal) => p.beneficiaryAddress === options.beneficiaryAddress);
+    let proposals = new Array<ContributionProposal>();
+    await new Promise<Array<void>>(
+      async (resolve: () => void, reject: (error: Error) => void): Promise<void> => {
+        proposalsFetcher.get(
+          async (error: Error, log: Array<DecodedLogEntryEvent<SchemeProposalExecutedEventResult>>) => {
+            if (error) {
+              return reject(error);
+            }
+            for (const event of log) {
+              const proposal = await this.getVotableProposal(options.avatar, event.args._proposalId);
+              if (proposal.beneficiaryAddress === options.beneficiaryAddress) {
+                proposals.push(proposal);
+              }
+            }
+            resolve();
+          });
+      });
 
     const rewardsArray = new Array<ProposalRewards>();
 

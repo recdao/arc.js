@@ -10,7 +10,11 @@ import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalService, VotableProposal } from "../proposalService";
 import { VotingMachineService } from "../votingMachineService";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
-import { ExecuteProposalEventResult, NewProposalEventResult, VoteProposalEventResult } from "./commonEventInterfaces";
+import {
+  NewProposalEventResult,
+  VoteProposalEventResult,
+  VotingMachineExecuteProposalEventResult
+} from "./commonEventInterfaces";
 
 export class AbsoluteVoteWrapper extends ContractWrapperBase {
 
@@ -25,7 +29,7 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
   /* tslint:disable:max-line-length */
   public NewProposal: EventFetcherFactory<NewProposalEventResult> = this.createEventFetcherFactory<NewProposalEventResult>("NewProposal");
   public CancelProposal: EventFetcherFactory<CancelProposalEventResult> = this.createEventFetcherFactory<CancelProposalEventResult>("CancelProposal");
-  public ExecuteProposal: EventFetcherFactory<ExecuteProposalEventResult> = this.createEventFetcherFactory<ExecuteProposalEventResult>("ExecuteProposal");
+  public ExecuteProposal: EventFetcherFactory<VotingMachineExecuteProposalEventResult> = this.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>("ExecuteProposal");
   public VoteProposal: EventFetcherFactory<VoteProposalEventResult> = this.createEventFetcherFactory<VoteProposalEventResult>("VoteProposal");
   public CancelVoting: EventFetcherFactory<CancelVotingEventResult> = this.createEventFetcherFactory<CancelVotingEventResult>("CancelVoting");
   /* tslint:enable:max-line-length */

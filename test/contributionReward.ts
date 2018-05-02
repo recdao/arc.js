@@ -229,16 +229,31 @@ describe("ContributionReward scheme", () => {
 
     const proposalId2 = result.proposalId;
 
-    const proposals = await (await scheme.getVotableProposals(dao.avatar.address))({}, { fromBlock: 0 }).get();
+    let proposals = await (await scheme.getVotableProposals(dao.avatar.address))({}, { fromBlock: 0 }).get();
 
-    assert.equal(proposals.length, 2, "Should have found 2 proposals");
+    assert.equal(proposals.length, 2, "Should have found 2 votable proposals");
     assert(proposals.filter(
       (p: ContributionProposal) => p.proposalId === proposalId1).length, "proposalId1 not found");
     assert(proposals.filter(
       (p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
 
-    const proposal = await scheme.getVotableProposal(dao.avatar.address, proposalId2);
+    let proposal = await scheme.getVotableProposal(dao.avatar.address, proposalId2);
     assert(proposal.proposalId === proposalId2, "proposalId2 not found");
+    assert.equal(proposal.beneficiaryAddress, accounts[1],
+      "beneficiaryAddress not set properly on proposal");
+
+    await votingMachine.vote(BinaryVoteResult.Yes, proposalId2, accounts[0]);
+    await votingMachine.vote(BinaryVoteResult.Yes, proposalId2, accounts[1]);
+
+    proposals = await (await scheme.getExecutedProposals(dao.avatar.address))(
+      { _proposalId: proposalId2 }, { fromBlock: 0 }).get();
+
+    assert.equal(proposals.length, 1, "Executed proposal not found");
+
+    proposal = proposals[0];
+
+    assert(proposal.proposalId === proposalId2, "executed proposalId2 not found");
+
     assert.equal(proposal.beneficiaryAddress, accounts[1],
       "beneficiaryAddress not set properly on proposal");
   });

@@ -5,9 +5,9 @@ import { Utils } from "./utils";
 import { EventFetcherFactory, Web3EventService } from "./web3EventService";
 import { CancelProposalEventResult, CancelVotingEventResult } from "./wrappers/absoluteVote";
 import {
-  ExecuteProposalEventResult,
   NewProposalEventResult,
-  VoteProposalEventResult
+  VoteProposalEventResult,
+  VotingMachineExecuteProposalEventResult
 } from "./wrappers/commonEventInterfaces";
 
 /**
@@ -57,8 +57,8 @@ export class VotingMachineService implements HasContract {
   /**
    * Get or watch events fired when proposals have been executed
    */
-  public ExecuteProposal: EventFetcherFactory<ExecuteProposalEventResult> =
-    this.web3EventService.createEventFetcherFactory<ExecuteProposalEventResult>("ExecuteProposal", this);
+  public ExecuteProposal: EventFetcherFactory<VotingMachineExecuteProposalEventResult> =
+    this.web3EventService.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>("ExecuteProposal", this);
   /**
    * Get or watch events fired whenever votes are cast on a proposal
    */
