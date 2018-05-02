@@ -46,10 +46,8 @@ export class ProposalVotingMachineServiceFactory {
 }
 
 /**
- * Provides the services of any voting machine that implements the `IntVoteInterface`
- * Arc contract interface.  VotingMachineService implements `IntVoteInterface`
- * straight except when transactions are generated then we return `Promise<ArcTransactionResult>`
- * instead of `Promise<TransactionReceiptTruffle>`.
+ * Provides the services of a VotingMachineService, simplifying the interface by
+ * encapsulating the proposalId.
  */
 export class ProposalVotingMachineService extends VotingMachineService implements HasContract {
   /**
