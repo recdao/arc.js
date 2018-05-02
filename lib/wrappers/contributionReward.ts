@@ -382,7 +382,7 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
      * We don't use getExecutedProposals because we want to be able to work
      * across avatars.
      */
-    let proposals = new Array<ContributionProposal>();
+    const proposals = new Array<ContributionProposal>();
     await new Promise<Array<void>>(
       async (resolve: () => void, reject: (error: Error) => void): Promise<void> => {
         proposalsFetcher.get(

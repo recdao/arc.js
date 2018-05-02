@@ -57,7 +57,7 @@ describe("UpgradeScheme", () => {
 
     assert.equal(proposals.length, 1);
 
-    let proposal = proposals[0];
+    const proposal = proposals[0];
     assert.equal(proposal.proposalId, proposalId);
 
     const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
