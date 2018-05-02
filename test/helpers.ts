@@ -1,16 +1,19 @@
 import { BigNumber } from "bignumber.js";
 import { assert } from "chai";
+import { Contract } from "web3";
 import { Address, fnVoid, Hash, SchemeWrapper } from "../lib/commonTypes";
 import { ConfigService } from "../lib/configService";
 import { DAO, NewDaoConfig } from "../lib/dao";
 import {
+  ArcTransactionResult,
   ContractWrapperBase,
   ContractWrapperFactory,
   ContributionRewardWrapper,
+  DecodedLogEntryEvent,
+  ExecuteProposalEventResult,
   InitializeArcJs,
   ProposalGeneratorBase,
-  VotingMachineService,
-  ArcTransactionResult
+  VotingMachineService
 } from "../lib/index";
 import { LoggingService, LogLevel } from "../lib/loggingService";
 import { Utils } from "../lib/utils";
@@ -114,6 +117,10 @@ export async function addProposeContributionReward(dao: DAO): Promise<Contributi
   return contributionReward;
 }
 
+export function wrapperForContract(contractName: string, address?: Address): Promise<ContractWrapperBase> {
+  return WrapperService.getContractWrapper(contractName, address);
+}
+
 export async function getSchemeVotingMachineParametersHash(dao: DAO, scheme: SchemeWrapper): Promise<Hash> {
   return (await scheme.getSchemeParameters(dao.avatar.address)).voteParametersHash;
 }
@@ -126,78 +133,48 @@ export async function getSchemeVotingMachine(
 
 export async function getVotingMachineParameters(
   votingMachineService: VotingMachineService,
-  votingMachineParamsHash: Hash): Promise<Array<any>> {
-  return votingMachineService.getParameters(votingMachineParamsHash);
+  votingMachineParamsHash: Hash): Promise<any> {
+
+  /**
+   * only works for originally-deployed voting machines
+   */
+  const wrapper = wrapperForVotingMachine(votingMachineService);
+
+  return wrapper.getParameters(votingMachineParamsHash);
 }
 
 /**
  * vote for the proposal given by proposalId.
  */
-export function vote(votingMachine: VotingMachineService, proposalId: Hash, theVote: number, voter: Address): Promise<ArcTransactionResult> {
+export function vote(
+  votingMachine: VotingMachineService,
+  proposalId: Hash,
+  theVote: number,
+  voter: Address): Promise<ArcTransactionResult> {
   voter = (voter ? voter : accounts[0]);
   return votingMachine.vote(theVote, proposalId, voter);
 }
 
-export async function voteWasExecuted(votingMachine: any, proposalId: Hash): Promise<boolean> {
-  return new Promise((resolve: (ok: boolean) => void): void => {
-    let event;
-    /**
-     * depending on whether or not the wrapper was passed, do the right thing
-     */
-    if (votingMachine.contract) {
-      event = votingMachine.contract.ExecuteProposal({ _proposalId: proposalId }, { fromBlock: 0 });
-    } else {
-      event = votingMachine.ExecuteProposal({ _proposalId: proposalId }, { fromBlock: 0 });
-    }
-    event.get((err: Error, events: Array<any>, reject: (error: Error) => void): void => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(events.length === 1);
-    });
+export function wrapperForVotingMachine(votingMachine: VotingMachineService): ContractWrapperBase {
+  // Only works if the votingMachine is an instance originally deployed by DAOstack
+  return WrapperService.wrappersByAddress.get(votingMachine.address);
+}
+
+export async function voteWasExecuted(votingMachine: VotingMachineService, proposalId: Hash): Promise<boolean> {
+  return new Promise((resolve: (ok: boolean) => void, reject: (error: Error) => void): void => {
+
+    // TODO: VotingMachineSerice events should suffice
+    const vmWrapper = wrapperForVotingMachine(votingMachine) as any;
+
+    const event = vmWrapper.ExecuteProposal({ _proposalId: proposalId }, { fromBlock: 0 });
+    event.get(
+      (err: Error, events: Array<DecodedLogEntryEvent<ExecuteProposalEventResult>>): void => {
+        if (err) {
+          return reject(err);
+        }
+        resolve((events.length === 1) && (events[0].args._proposalId === proposalId));
+      });
   });
-}
-
-export const outOfGasMessage =
-  "VM Exception while processing transaction: out of gas";
-
-export function assertJumpOrOutOfGas(error: Error): void {
-  const condition =
-    error.message === outOfGasMessage ||
-    error.message.search("invalid JUMP") > -1;
-  assert.isTrue(
-    condition,
-    "Expected an out-of-gas error or an invalid JUMP error, got this instead: " +
-    error.message
-  );
-}
-
-export function assertVMException(error: Error): void {
-  const condition = error.message.search("VM Exception") > -1;
-  assert.isTrue(
-    condition,
-    "Expected a VM Exception, got this instead:" + error.message
-  );
-}
-
-export function assertInternalFunctionException(error: Error): void {
-  const condition = error.message.search("is not a function") > -1;
-  assert.isTrue(
-    condition,
-    "Expected a function not found Exception, got this instead:" + error.message
-  );
-}
-
-export function assertJump(error: Error): void {
-  assert.isAbove(
-    error.message.search("invalid JUMP"),
-    -1,
-    "Invalid JUMP error must be returned" + error.message
-  );
-}
-
-export function contractsForTest(): ArcWrappers {
-  return WrapperService.wrappers;
 }
 
 // Increases ganache time by the passed duration in seconds

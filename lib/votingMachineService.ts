@@ -82,10 +82,6 @@ export class VotingMachineService implements HasContract {
     private web3EventService: Web3EventService) {
   }
 
-  public getParameters(votingMachineParamsHash: Hash): Promise<Array<any>> {
-    return (this.contract as any).parameters(votingMachineParamsHash);
-  }
-
   /**
    * Get or watch NewProposal events, filtering out proposals that are no longer votable.
    */
@@ -304,9 +300,9 @@ export class VotingMachineService implements HasContract {
  */
 export interface IntVoteInterface {
   propose(numOfChoices: number,
-    proposalParameters: Hash,
-    avatar: Address,
-    execute: Address): Promise<TransactionReceiptTruffle>;
+          proposalParameters: Hash,
+          avatar: Address,
+          execute: Address): Promise<TransactionReceiptTruffle>;
   cancelProposal(proposalId: Hash): Promise<TransactionReceiptTruffle>;
   ownerVote(proposalId: Hash, vote: number, voter: Address): Promise<TransactionReceiptTruffle>;
   // options is not part of Arc, rather is part of truffle. Declared here for onBehalfOf

@@ -179,12 +179,14 @@ describe("VoteInOrganizationScheme", () => {
     /**
      * cast a vote using voteInOrganizationScheme's voting machine.
      */
-    await helpers.vote(votingMachine, result.proposalId, 1, accounts[1]);
-    await helpers.vote(votingMachine, result.proposalId, 1, accounts[2]);
+    await votingMachine.vote(BinaryVoteResult.Yes, result.proposalId, accounts[1]);
+    await votingMachine.vote(BinaryVoteResult.Yes, result.proposalId, accounts[2]);
     /**
      * confirm that a vote was cast by the original DAO's scheme
+     * TODO:  this event should work with VotingMachineService
      */
-    const originalVoteEvent = proposalInfo.votingMachine.VoteProposal({}, { fromBlock: 0 });
+    const votingMachineWrapper = helpers.wrapperForVotingMachine(proposalInfo.votingMachine) as AbsoluteVoteWrapper;
+    const originalVoteEvent = votingMachineWrapper.VoteProposal({}, { fromBlock: 0 });
 
     await new Promise(async (resolve: fnVoid): Promise<void> => {
       originalVoteEvent.get((err: Error, eventsArray: Array<DecodedLogEntryEvent<VoteProposalEventResult>>) => {

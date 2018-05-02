@@ -834,7 +834,7 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   }
 
   public async getVotingMachineAddress(avatarAddress: Address): Promise<Address> {
-    return Promise.resolve(this.contract);
+    return Promise.resolve(this.address);
   }
 
   public getDefaultPermissions(overrideValue?: SchemePermissions): SchemePermissions {

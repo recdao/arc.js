@@ -141,10 +141,10 @@ describe("GlobalConstraintRegistrar", () => {
     assert.equal(votingMachine.address, parametersForVotingInGCR[1]);
     // while the voteRegisterParams are known on the voting machine
     // and consist of [reputationSystem address, treshold percentage]
-    const voteRegisterParams = await votingMachine.getParameters(parametersForVotingInGCR[0]);
+    const voteRegisterParams = await helpers.getVotingMachineParameters(votingMachine, parametersForVotingInGCR[0]);
 
-    const msg = "These parameters are not known the voting machine...";
-    assert.notEqual(voteRegisterParams[0], "0x0000000000000000000000000000000000000000", msg);
+    assert.notEqual(voteRegisterParams.reputation, "0x0000000000000000000000000000000000000000",
+      "These parameters are not known the voting machine...");
 
     const result = await gcr.proposeToAddModifyGlobalConstraint({
       avatar: dao.avatar.address,

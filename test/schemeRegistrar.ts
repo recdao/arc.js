@@ -58,7 +58,7 @@ describe("SchemeRegistrar", () => {
 
     const dao = await helpers.forgeDao();
 
-    const wrappers = helpers.contractsForTest();
+    const wrappers = WrapperService.wrappers;
 
     const schemeRegistrar =
       await helpers.getDaoScheme(dao, "SchemeRegistrar", SchemeRegistrarFactory) as SchemeRegistrarWrapper;
@@ -169,7 +169,7 @@ describe("SchemeRegistrar", () => {
     const contributionReward = await dao.getSchemes("ContributionReward");
     assert.equal(contributionReward.length, 0, "scheme is already present");
 
-    const wrappers = helpers.contractsForTest();
+    const wrappers = WrapperService.wrappers;
     const contributionRewardAddress = wrappers.ContributionReward.address;
 
     assert.isFalse(

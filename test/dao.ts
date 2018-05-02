@@ -215,7 +215,7 @@ describe("DAO", () => {
     const votingMachineParamsHash = await helpers.getSchemeVotingMachineParametersHash(dao, scheme);
     const votingMachine = await helpers.getSchemeVotingMachine(dao, scheme);
     const votingMachineParams = await helpers.getVotingMachineParameters(votingMachine, votingMachineParamsHash);
-    assert.equal(votingMachineParams[1].toNumber(), 45);
+    assert.equal(votingMachineParams.votePerc, 45);
   });
 
   it("can be created with schemes and scheme-specific votingMachineParams", async () => {
@@ -250,7 +250,7 @@ describe("DAO", () => {
     let votingMachineParamsHash = await helpers.getSchemeVotingMachineParametersHash(dao, gcscheme);
     let votingMachine = await helpers.getSchemeVotingMachine(dao, gcscheme);
     let votingMachineParams = await helpers.getVotingMachineParameters(votingMachine, votingMachineParamsHash);
-    assert.equal(votingMachineParams[1].toNumber(), 30);
+    assert.equal(votingMachineParams.votePerc, 30);
 
     const upgradeScheme =
       await helpers.getDaoScheme(dao, "UpgradeScheme", UpgradeSchemeFactory) as UpgradeSchemeWrapper;
@@ -261,12 +261,12 @@ describe("DAO", () => {
     votingMachineParamsHash = await helpers.getSchemeVotingMachineParametersHash(dao, upgradeScheme);
     votingMachine = await helpers.getSchemeVotingMachine(dao, upgradeScheme);
     votingMachineParams = await helpers.getVotingMachineParameters(votingMachine, votingMachineParamsHash);
-    assert.equal(votingMachineParams[1].toNumber(), 45);
+    assert.equal(votingMachineParams.votePerc, 45);
   });
 
   it("has a working getSchemes() function to access its schemes", async () => {
     const dao = await helpers.forgeDao();
-    const wrappers = helpers.contractsForTest();
+    const wrappers = WrapperService.wrappers;
     // a new dao comes with three known schemes
     assert.equal((await dao.getSchemes()).length, 3);
     let scheme = await helpers.getDaoScheme(dao, "GlobalConstraintRegistrar", GlobalConstraintRegistrarFactory);

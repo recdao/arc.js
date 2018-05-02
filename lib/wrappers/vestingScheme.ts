@@ -218,7 +218,7 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
     return this.proposalService.getProposalEvents(
       {
         baseArgFilter: { _avatar: avatarAddress },
-        proposalsEventFetcher: this.ProposalExecuted,
+        proposalsEventFetcher: this.AgreementProposal,
         transformEventCallback:
           async (args: ProposalExecutedEventResult): Promise<AgreementProposal> => {
             return this.getVotableProposal(args._avatar, args._proposalId);
