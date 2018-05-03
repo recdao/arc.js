@@ -12,7 +12,7 @@ export class Web3EventService {
    * Note that the callback parameter of `EventFetcher.get` is optional; you
    * may alternatively obtain the promise of a `Array<TEventArgs>` from the return value
    * of `get`.
-   * 
+   *
    * Example:
    *
    *    public NewProposal = Web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal");
@@ -80,7 +80,8 @@ export class Web3EventService {
           return new Promise<Array<TEventArgs>>(
             (resolve: (result: Array<TEventArgs>) => void, reject: (error: Error) => void): void => {
               baseEvent.get(
-                (error: Error, log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
+                (error: Error, 
+                log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
                   if (error) {
                     return reject(error);
                   }
