@@ -265,7 +265,6 @@ describe("ContributionReward scheme", () => {
       proposalsFromGet.length,
       "direct and indirect calls returned different array lengths");
 
-
   });
 
   it("can get beneficiaryAddress's outstanding rewards", async () => {
