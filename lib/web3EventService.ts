@@ -80,8 +80,8 @@ export class Web3EventService {
           return new Promise<Array<TEventArgs>>(
             (resolve: (result: Array<TEventArgs>) => void, reject: (error: Error) => void): void => {
               baseEvent.get(
-                (error: Error, 
-                log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
+                (error: Error,
+                 log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
                   if (error) {
                     return reject(error);
                   }

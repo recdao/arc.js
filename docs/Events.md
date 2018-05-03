@@ -10,7 +10,7 @@ We refer to "Web3 events" as the events that originate from Arc contracts and th
 Arc.js exposes Web3 events in an "almost raw" format virtually the same as Web3, or as entities that are simpler to use and may provide more information and functionality than the raw event.
 
 <a name="almostrawevents"></a>
-### Almost Raw Events
+### Almost Raw Web3 Events
 For every Arc contract that fires events and is wrapped by Arc.js, the Arc.js wrapper exposes the events, making them look just like the events as exposed by [Web3](https://github.com/ethereum/wiki/wiki/JavaScript-API#contract-events) and [Truffle contracts](http://truffleframework.com/docs/getting_started/contracts), but with several advantages:
 
 1. If you are using TypeScript then the event arguments (`event.args`) will by typed, so you will see suggestions and errors in Intellisense and the TypeScript compiler.
@@ -22,8 +22,8 @@ need about the event.
 !!! info
     This "raw" event functionality is provided by Arc.js's [EventFetcherFactory](api/README/#eventfetcherfactory) class and the [Web3EventService](api/classes/Web3EventService).
 
-### Entities for Events
-You can get cleaner and simpler Web3 events using Arc.js's [Web3EventService](api/classes/Web3EventService) to turn any ["almost raw" event](#almostrawevents) into an [EntityFetcherFactory](api/README/#entityfetcherfactory) that provides cleaner and potentially richer entities instead of the leaner and more awkward Web3 `event.args` syntax.
+### Entities for Web3 Events
+You can use Arc.js's [Web3EventService](api/classes/Web3EventService) to turn any ["almost raw" event](#almostrawevents) into an [EntityFetcherFactory](api/README/#entityfetcherfactory) that provides cleaner and potentially richer entities than the leaner and more awkward Web3 `event.args` syntax.
 
 One example of this, from [ContributionRewardWrapper](api/classes/ContributionRewardWrapper), is a function that returns a promise of an [EntityFetcherFactory](api/README/#entityfetcherfactory) that turns `event.args` from the [NewContributionProposal event](api/classes/ContributionRewardWrapper#NewContributionProposal) into a [ContributionProposal](api/interfaces/ContributionProposal) entity (object or interface).
 
