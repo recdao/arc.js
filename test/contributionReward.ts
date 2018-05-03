@@ -245,7 +245,7 @@ describe("ContributionReward scheme", () => {
     await votingMachine.vote(BinaryVoteResult.Yes, proposalId2, accounts[0]);
     await votingMachine.vote(BinaryVoteResult.Yes, proposalId2, accounts[1]);
 
-    proposals = await (await scheme.getExecutedProposals(dao.avatar.address))(
+    proposals = await scheme.getExecutedProposals(dao.avatar.address)(
       { _proposalId: proposalId2 }, { fromBlock: 0 }).get();
 
     assert.equal(proposals.length, 1, "Executed proposal not found");

@@ -54,7 +54,7 @@ describe("UpgradeScheme", () => {
      * at this point upgradeScheme is no longer registered with the controller.
      * Thus we will not be able to obtain the scheme's voting machine address.
      */
-    const executedProposals = await (await upgradeScheme.getExecutedProposals(dao.avatar.address))(
+    const executedProposals = await upgradeScheme.getExecutedProposals(dao.avatar.address)(
       {}, { fromBlock: 0 }).get();
 
     assert(executedProposals.length > 0, "Executed proposals not found");
@@ -100,7 +100,7 @@ describe("UpgradeScheme", () => {
 
     await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
 
-    const executedProposals = await (await upgradeScheme.getExecutedProposals(dao.avatar.address))(
+    const executedProposals = await upgradeScheme.getExecutedProposals(dao.avatar.address)(
       { _proposalId: proposalId }, { fromBlock: 0 }).get();
 
     assert.equal(executedProposals.length, 1, "Executed proposal not found");

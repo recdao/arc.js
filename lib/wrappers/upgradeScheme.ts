@@ -170,8 +170,8 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
    * EntityFetcherFactory for executed proposals.
    * @param avatarAddress
    */
-  public async getExecutedProposals(avatarAddress: Address):
-    Promise<EntityFetcherFactory<SchemeProposalExecuted, SchemeProposalExecutedEventResult>> {
+  public getExecutedProposals(avatarAddress: Address):
+    EntityFetcherFactory<SchemeProposalExecuted, SchemeProposalExecutedEventResult> {
 
     return this.proposalService.getProposalEvents(
       {

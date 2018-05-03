@@ -13,18 +13,11 @@ import * as helpers from "./helpers";
 describe("DAO", () => {
 
   it("can call getDaos", async () => {
-    await DAO.new({
-      name: "ArcJsTestDao",
-      tokenName: "Tokens of ArcJsTestDao",
-      tokenSymbol: "ATD",
-    });
 
-    const daos = await DAO.getDaos({});
-    assert.isOk(daos, "daos is not set");
-    assert(daos.length > 0, "no daos found");
-  });
+    let daos = await DAO.getDaos();
+    assert.isOk(daos, "daos array not returned");
+    const originaCountOfDaos = daos.length;
 
-  it("can call getDaos with callback", async () => {
     await DAO.new({
       name: "ArcJsTestDao",
       tokenName: "Tokens of ArcJsTestDao",
@@ -36,17 +29,19 @@ describe("DAO", () => {
       tokenSymbol: "ATD",
     });
 
-    let count = 0;
-    const perDaoCallback = (avatarAddress: Address): void => {
-      ++count;
-    };
-
-    const daos = await DAO.getDaos({ perDaoCallback });
-    assert.isOk(daos, "daos is not set");
-    assert.equal(daos.length, count, "callback not invoked");
+    daos = await DAO.getDaos();
+    assert.isOk(daos, "daos array not returned");
+    assert.equal(daos.length, originaCountOfDaos + 2, `Should have found ${originaCountOfDaos + 2} daos`);
   });
 
-  it("can interrupt getDaos with callback", async () => {
+  it("can call getDaoCreationEvents", async () => {
+
+    const daoEventFetcherFactory = await DAO.getDaoCreationEvents();
+    assert.isOk(daoEventFetcherFactory, "daoEventFetcherFactory is not set");
+    let daos = await daoEventFetcherFactory({}, { fromBlock: 0 }).get();
+    assert.isOk(daos, "daos array not returned");
+    const originaCountOfDaos = daos.length;
+
     await DAO.new({
       name: "ArcJsTestDao",
       tokenName: "Tokens of ArcJsTestDao",
@@ -58,16 +53,38 @@ describe("DAO", () => {
       tokenSymbol: "ATD",
     });
 
-    let count = 0;
-    const perDaoCallback: PerDaoCallback = (avatarAddress: Address): Promise<boolean> => {
-      ++count;
-      return Promise.resolve(true);
-    };
+    daos = await daoEventFetcherFactory({}, { fromBlock: 0 }).get();
 
-    const daos = await DAO.getDaos({ perDaoCallback });
-    assert.isOk(daos, "daos is not set");
-    assert(daos.length === 1, "wrong number of daos found");
-    assert(count === 1, "wrong number of callbacks");
+    assert.equal(daos.length, originaCountOfDaos + 2, `Should have found ${originaCountOfDaos + 2} daos`);
+  });
+
+  it("can watch getDaos", async () => {
+
+    const daoEventFetcherFactory = await DAO.getDaoCreationEvents();
+    assert.isOk(daoEventFetcherFactory, "daoEventFetcherFactory is not set");
+
+    const daos = await daoEventFetcherFactory({}, { fromBlock: 0 }).get();
+    assert.isOk(daos, "daos array not returned");
+    const originaCountOfDaos = daos.length;
+    let count = 0;
+
+    const watcher = daoEventFetcherFactory({}, { fromBlock: 0 });
+
+    watcher.watch(
+      async (error: Error, daoAddresses: Promise<Array<Address>>): Promise<void> => {
+        const addresses = await daoAddresses;
+        count += addresses.length;
+      });
+
+    await DAO.new({
+      name: "ArcJsTestDao",
+      tokenName: "Tokens of ArcJsTestDao",
+      tokenSymbol: "ATD",
+    });
+
+    await helpers.sleep(1000);
+    await watcher.stopWatching();
+    assert.equal(count, originaCountOfDaos + 1, `Should have observed one new dao`);
   });
 
   it("default config for counting the number of transactions", async () => {

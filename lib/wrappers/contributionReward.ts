@@ -338,8 +338,8 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
    * The Arc ContributionProposals contract retains the original proposal struct after execution.
    * @param avatarAddress
    */
-  public async getExecutedProposals(avatarAddress: Address):
-    Promise<EntityFetcherFactory<ContributionProposal, SchemeProposalExecutedEventResult>> {
+  public getExecutedProposals(avatarAddress: Address):
+    EntityFetcherFactory<ContributionProposal, SchemeProposalExecutedEventResult> {
 
     return this.proposalService.getProposalEvents(
       {

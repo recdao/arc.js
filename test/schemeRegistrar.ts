@@ -36,7 +36,7 @@ describe("SchemeRegistrar", () => {
      * at this point schemeRegistrar is no longer registered with the controller.
      * Thus we will not be able to obtain the scheme's voting machine address.
      */
-    const executedProposals = await (await schemeRegistrar.getExecutedProposals(dao.avatar.address))(
+    const executedProposals = await schemeRegistrar.getExecutedProposals(dao.avatar.address)(
       {}, { fromBlock: 0 }).get();
 
     assert(executedProposals.length > 0, "Executed proposals not found");
@@ -240,7 +240,7 @@ describe("SchemeRegistrar", () => {
 
     await votingMachine.vote(BinaryVoteResult.Yes, proposalToRemoveId, accounts[1]);
 
-    const proposals = await (await schemeRegistrar.getExecutedProposals(dao.avatar.address))(
+    const proposals = await schemeRegistrar.getExecutedProposals(dao.avatar.address)(
       { _proposalId: proposalToRemoveId }, { fromBlock: 0 }).get();
 
     assert.equal(proposals.length, 1);

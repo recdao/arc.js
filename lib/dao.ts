@@ -1,4 +1,5 @@
 "use strict";
+import { EntityFetcherFactory, Web3EventService } from ".";
 import { AvatarService } from "./avatarService";
 import { Address, fnVoid, Hash } from "./commonTypes";
 import { ContractWrapperBase, DecodedLogEntryEvent } from "./contractWrapperBase";
@@ -109,53 +110,45 @@ export class DAO {
   }
 
   /**
-   * Return a promise of an array of avatar addresses for all of the DAOs created by the optionally-given
-   * DaoCreator contract.  The default DaoCreator is the one deployed by
+   * Return a promise of an array of avatar addresses for all of the DAOs created
+   * by the optionally-given DaoCreator contract.  The default DaoCreator is the one deployed by
    * the running version of Arc.js.
    *
    * An alternative DaoCreator must implement an InitialSchemesSet event just like the
    * Arc DaoCreater.
    * @param options
    */
-  public static async getDaos(options: GetDaosOptions): Promise<Array<Address>> {
+  public static async getDaos(options: GetDaosOptions = {}): Promise<Array<Address>> {
     return new Promise<Array<Address>>(
-      async (resolve: (daos: Array<Address>) => void, reject: (error: Error) => void): Promise<void> => {
-        try {
-          const daos = new Array<Address>();
+      async (resolve: (daos: Array<Address>) => void): Promise<void> => {
+        const daoEventFetcherFactory = await DAO.getDaoCreationEvents(options);
+        const daos = await daoEventFetcherFactory({}, { fromBlock: 0 }).get();
+        resolve(daos);
+      });
+  }
 
-          const daoCreator =
-            options.daoCreatorAddress ?
-              await WrapperService.factories.DaoCreator
-                .at(options.daoCreatorAddress) : WrapperService.wrappers.DaoCreator;
+  /**
+   * Return a promise of an EntityFetcherFactory to get/watch avatar addresses
+   * for all of the DAOs created by the optionally-given DaoCreator contract.
+   * The default DaoCreator is the one deployed by the running version of Arc.js.
+   *
+   * An alternative DaoCreator must implement an InitialSchemesSet event just like the Arc DaoCreater.
+   * @param options Optional, default is `{}`.
+   */
+  public static async getDaoCreationEvents(options: GetDaosOptions = {}):
+    Promise<EntityFetcherFactory<Address, InitialSchemesSetEventResult>> {
 
-          const initSchemesEvent = daoCreator.InitialSchemesSet({}, { fromBlock: 0 });
+    const web3EventService = new Web3EventService();
+    const daoCreator =
+      options.daoCreatorAddress ?
+        await WrapperService.factories.DaoCreator
+          .at(options.daoCreatorAddress) : WrapperService.wrappers.DaoCreator;
 
-          initSchemesEvent.get(async (err: Error, log: Array<DecodedLogEntryEvent<InitialSchemesSetEventResult>>) => {
-            if (err) {
-              LoggingService.error(`getDaos: Error obtaining DAOs: ${err}`);
-              return reject(err);
-            }
-            for (const event of log) {
-              const avatarAddress = event.args._avatar;
-              LoggingService.debug(`getDaos: loaded dao: ${avatarAddress}`);
-              daos.push(avatarAddress);
-              if (options.perDaoCallback) {
-                const promiseOfStopSign = options.perDaoCallback(avatarAddress);
-                if (promiseOfStopSign) {
-                  const stop = await promiseOfStopSign;
-                  if (stop) {
-                    break;
-                  }
-                }
-              }
-            }
-            LoggingService.debug("Finished loading daos");
-            resolve(daos);
-          });
-        } catch (ex) {
-          LoggingService.error(`getDaos: Error obtaining DAOs: ${ex}`);
-          return reject(ex);
-        }
+    return web3EventService.createEntityFetcherFactory(
+      daoCreator.InitialSchemesSet,
+      async (args: InitialSchemesSetEventResult): Promise<Address> => {
+        const avatarAddress = args._avatar;
+        return Promise.resolve(avatarAddress);
       });
   }
 
@@ -431,9 +424,4 @@ export type PerDaoCallback = (avatarAddress: Address) => void | Promise<boolean>
 
 export interface GetDaosOptions {
   daoCreatorAddress?: Address;
-  /**
-   * Optional callback invoked after obtaining each avatar address.
-   * Return nothing or a promise of whether to stop finding Daos at this point.
-   */
-  perDaoCallback?: PerDaoCallback;
 }
