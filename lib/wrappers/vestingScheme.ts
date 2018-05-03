@@ -247,7 +247,6 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
               winningVote: event._param,
             });
           },
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }
 

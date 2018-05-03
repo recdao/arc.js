@@ -12,6 +12,36 @@ import * as helpers from "./helpers";
 
 describe("SchemeRegistrar", () => {
 
+  it("can get executed proposals", async () => {
+
+    const dao = await helpers.forgeDao();
+
+    const schemeRegistrar =
+      await helpers.getDaoScheme(dao, "SchemeRegistrar", SchemeRegistrarFactory) as SchemeRegistrarWrapper;
+    // schemeRegistrar can't remove a scheme with greater permissions that it has
+    const removedScheme = schemeRegistrar;
+
+    const votingMachine = await schemeRegistrar.getVotingMachineService(dao.avatar.address);
+
+    const result = await schemeRegistrar.proposeToRemoveScheme({
+      avatar: dao.avatar.address,
+      schemeAddress: removedScheme.address,
+    });
+
+    const proposalId = result.proposalId;
+
+    await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
+
+    /**
+     * at this point schemeRegistrar is no longer registered with the controller.
+     * Thus we will not be able to obtain the scheme's voting machine address.
+     */
+    const executedProposals = await (await schemeRegistrar.getExecutedProposals(dao.avatar.address))(
+      {}, { fromBlock: 0 }).get();
+
+    assert(executedProposals.length > 0, "Executed proposals not found");
+  });
+
   it("can add scheme with voteToRemove parameters ", async () => {
     const voteParamsArray = [helpers.SOME_ADDRESS, 33, true];
 

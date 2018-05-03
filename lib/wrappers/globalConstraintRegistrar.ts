@@ -153,7 +153,6 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
               winningVote: event._param,
             });
           },
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }
 

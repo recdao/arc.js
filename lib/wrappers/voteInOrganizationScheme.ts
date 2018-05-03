@@ -101,7 +101,6 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
               winningVote: event._param,
             });
           },
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }
 

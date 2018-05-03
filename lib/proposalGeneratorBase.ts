@@ -21,7 +21,7 @@ export abstract class ProposalGeneratorBase extends ContractWrapperBase {
 
   public async getVotingMachineService(avatarAddress: Address): Promise<VotingMachineService> {
     const votingMachineAddress = await this.getVotingMachineAddress(avatarAddress);
-    return await this.votingMachineServiceFactory.create(votingMachineAddress);
+    return this.votingMachineServiceFactory.create(votingMachineAddress);
   }
 
   public async getProposalVotingMachineService(

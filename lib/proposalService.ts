@@ -27,8 +27,8 @@ export class ProposalService {
    * Returns an EntityFetcherFactory for fetching proposal-related events.  Can take any EventFetcherFactory
    * whose event args supply `_proposalId`.  Returns events as a promise of `TProposal`.  You must supply an
    * `EventFetcherFactory` for fetching the events and a callback to transform `TEventArgs` to a promise of `TProposal`.
-   * Each entity, if the associated proposal is votable,  will also contain a `votingMachineService` property
-   * of type `ProposalVotingMachineService`.
+   * Each entity, when the associated proposal is votable and options.votingMachineService is supplied,
+   * will also contain a `votingMachineService` property of type `ProposalVotingMachineService`.
    * @type TEventArgs The type of the `args` object in the event.
    * @type TProposal The type of object returned as a transformation of the `args` information in each event.
    * @param options
@@ -46,25 +46,31 @@ export class ProposalService {
     }
 
     const votableOnly = !!options.votableOnly;
+
     if (votableOnly && !options.votingMachineService) {
       throw new Error("votingMachineService must be supplied when votableOnly is true");
     }
 
     return this.web3EventService.createEntityFetcherFactory<TProposal, TEventArgs>(
       options.proposalsEventFetcher,
-      async (args: TEventArgs): Promise<(TProposal | (TProposal & ProposalEntity)) | undefined> => {
+      async (args: TEventArgs): Promise<TProposal | (TProposal & ProposalEntity) | undefined> => {
+        let entity: TProposal | (TProposal & ProposalEntity) | undefined;
 
-        const isVotable = await options.votingMachineService.isVotable(args._proposalId);
+        if (options.votingMachineService) {
+          const isVotable = await options.votingMachineService.isVotable(args._proposalId);
 
-        const entity = await (
-          ((!votableOnly || isVotable) ?
-            options.transformEventCallback(args) :
-            Promise.resolve(undefined)));
+          entity = await (
+            ((!votableOnly || isVotable) ?
+              options.transformEventCallback(args) :
+              Promise.resolve(undefined)));
 
-        if (entity && isVotable) {
-          const factory = new ProposalVotingMachineServiceFactory(this.web3EventService);
-          const votingService = await factory.fromVotingMachine(options.votingMachineService, args._proposalId);
-          entity.votingMachineService = votingService;
+          if (entity && isVotable) {
+            const factory = new ProposalVotingMachineServiceFactory(this.web3EventService);
+            const votingService = await factory.fromVotingMachine(options.votingMachineService, args._proposalId);
+            (entity as (TProposal & ProposalEntity)).votingMachineService = votingService;
+          }
+        } else {
+          entity = await options.transformEventCallback(args);
         }
         return entity;
       },
@@ -168,9 +174,10 @@ export interface GetProposalEventsOptions<TProposal, TEventArgs extends EventHas
    */
   votableOnly?: boolean;
   /**
-   * Used to determine whether proposals are votable, and to create a `ProposalVotingMachineService`.
+   * Used to determine whether proposals are votable, and then to create a `ProposalVotingMachineService`.
+   * This is only required when votableOnly is set to `true`.
    */
-  votingMachineService: VotingMachineService;
+  votingMachineService?: VotingMachineService;
 }
 
 export interface ProposalEntity {

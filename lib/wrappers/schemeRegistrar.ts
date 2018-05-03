@@ -226,7 +226,6 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
               winningVote: event._param,
             });
           },
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }
 

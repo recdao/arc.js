@@ -24,6 +24,42 @@ describe("UpgradeScheme", () => {
     avatar = await Avatar.new("name", token.address, reputation.address);
   });
 
+  it("can get executed proposals", async () => {
+
+    const dao = await helpers.forgeDao();
+
+    const upgradeScheme =
+      await helpers.getDaoScheme(dao, "UpgradeScheme", UpgradeSchemeFactory) as UpgradeSchemeWrapper;
+
+    const schemeParams = await upgradeScheme.getParameters(
+      await upgradeScheme.getSchemeParametersHash(dao.avatar.address));
+
+    const newUpgradeScheme = await UpgradeSchemeFactory.new();
+
+    await newUpgradeScheme.setParameters(schemeParams);
+
+    const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
+
+    const result = await upgradeScheme.proposeUpgradingScheme({
+      avatar: dao.avatar.address,
+      scheme: newUpgradeScheme.address,
+      schemeParametersHash: await dao.controller.getSchemeParameters(upgradeScheme.address, dao.avatar.address),
+    });
+
+    const proposalId = result.proposalId;
+
+    await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
+
+    /**
+     * at this point upgradeScheme is no longer registered with the controller.
+     * Thus we will not be able to obtain the scheme's voting machine address.
+     */
+    const executedProposals = await (await upgradeScheme.getExecutedProposals(dao.avatar.address))(
+      {}, { fromBlock: 0 }).get();
+
+    assert(executedProposals.length > 0, "Executed proposals not found");
+  });
+
   it("can get upgraded UpgradeSchemes", async () => {
 
     const dao = await helpers.forgeDao();
@@ -41,6 +77,8 @@ describe("UpgradeScheme", () => {
       await dao.isSchemeRegistered(upgradeScheme.address),
       "original scheme is not registered into the controller"
     );
+
+    const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
 
     const result = await upgradeScheme.proposeUpgradingScheme({
       avatar: dao.avatar.address,
@@ -60,8 +98,6 @@ describe("UpgradeScheme", () => {
     const proposal = proposals[0];
     assert.equal(proposal.proposalId, proposalId);
 
-    const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
-
     await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
 
     const executedProposals = await (await upgradeScheme.getExecutedProposals(dao.avatar.address))(
@@ -72,7 +108,6 @@ describe("UpgradeScheme", () => {
     const executedProposal = executedProposals[0];
 
     assert(executedProposal.proposalId === proposalId, "executed proposalId not found");
-
   });
 
   it("can get upgraded Controllers", async () => {

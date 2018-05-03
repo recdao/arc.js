@@ -349,7 +349,6 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
           (event: SchemeProposalExecutedEventResult): Promise<ContributionProposal> => {
             return this.getVotableProposal(avatarAddress, event._proposalId);
           },
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
       });
   }
 
