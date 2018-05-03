@@ -237,14 +237,7 @@ describe("ContributionReward scheme", () => {
     assert(proposals.filter(
       (p: ContributionProposal) => p.proposalId === proposalId2).length, "proposalId2 not found");
 
-    const proposalsFromGet = await scheme.NewContributionProposal({}, { fromBlock: 0 }).get();
-
     let proposal = await scheme.getVotableProposal(dao.avatar.address, proposalId2);
-
-    // make sure the direct return value of 'get' works
-    assert.equal(proposals.length,
-      proposalsFromGet.length,
-      "direct and indirect calls returned different array legnths");
 
     assert(proposal.proposalId === proposalId2, "proposalId2 not found");
     assert.equal(proposal.beneficiaryAddress, accounts[1],
@@ -264,6 +257,15 @@ describe("ContributionReward scheme", () => {
 
     assert.equal(proposal.beneficiaryAddress, accounts[1],
       "beneficiaryAddress not set properly on proposal");
+
+    const proposalsFromGet = await scheme.ProposalExecuted({ _avatar: dao.avatar.address }, { fromBlock: 0 }).get();
+
+    // make sure the direct return value of 'get' works
+    assert.equal(proposals.length,
+      proposalsFromGet.length,
+      "direct and indirect calls returned different array lengths");
+
+
   });
 
   it("can get beneficiaryAddress's outstanding rewards", async () => {
