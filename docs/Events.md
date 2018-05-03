@@ -1,62 +1,58 @@
 # Events
 
-## Blockchain Contract Events
+Arc.js offers two types of event systems:  [Web3](web3events) and [Pub/Sub](#pubsubevents).  The Pub/Sub system enables you to subscribe to miscellaneous events published by Arc.js.  The Web3 system enables you to get and watch events as they originate from Arc contracts and then are packaged into JavaScript by Web3.
 
-All of the Arc.js contract wrapper classes expose the contract's events that look just like the events as exposed by [Truffle contracts](https://github.com/trufflesuite/truffle-contract), but with a couple of advantages:
+<a name="web3events"></a>
+## Arc Web3 Events
 
-1. If you are using TypeScript then the event arguments (`_args`) will by typed, so you will see suggestions and errors in Intellisense and the TypeScript compiler.
-2. With Truffle, the callback to `get` or `watch` may or may not receive an array of events.  Sometimes it can be a single event.  The Arc.js wrapper always gives you an array.  Arc.js also eliminates duplicate events that can occur while the chain settles down (a feature that can be suppressed if desired).
+We refer to "Web3 events" as the events that originate from Arc contracts and then are packaged into JavaScript by Web3 (see the [Web3 documentation on contract events](https://github.com/ethereum/wiki/wiki/JavaScript-API#contract-events)).  You can get, watch and filter these events.
 
+Arc.js exposes Web3 events in an "almost raw" format virtually the same as Web3, or as entities that are simpler to use and may provide more information and functionality than the raw event.
+
+<a name="almostrawevents"></a>
+### Almost Raw Events
+For every Arc contract that fires events and is wrapped by Arc.js, the Arc.js wrapper exposes the events, making them look just like the events as exposed by [Web3](https://github.com/ethereum/wiki/wiki/JavaScript-API#contract-events) and [Truffle contracts](http://truffleframework.com/docs/getting_started/contracts), but with several advantages:
+
+1. If you are using TypeScript then the event arguments (`event.args`) will by typed, so you will see suggestions and errors in Intellisense and the TypeScript compiler.
+2. With Truffle, the callback to `get` or `watch` may or may not receive an array of events.  Sometimes it can be a single event.  The Arc.js wrapper always gives you an array.
+3. Arc.js eliminates duplicate events that can occur while the chain is in the process of settling down (a feature that can be suppressed if desired).
+4. The `get` method returns a promise of an array of `event.args`, bypassing the need for a callback if `args` is all the information you
+need about the event.
+
+!!! info
+    This "raw" event functionality is provided by Arc.js's [EventFetcherFactory](api/README/#eventfetcherfactory) class and the [Web3EventService](api/classes/Web3EventService).
+
+### Entities for Events
+You can get cleaner and simpler Web3 events using Arc.js's [Web3EventService](api/classes/Web3EventService) to turn any ["almost raw" event](#almostrawevents) into an [EntityFetcherFactory](api/README/#entityfetcherfactory) that provides cleaner and potentially richer entities instead of the leaner and more awkward Web3 `event.args` syntax.
+
+One example of this, from [ContributionRewardWrapper](api/classes/ContributionRewardWrapper), is a function that returns a promise of an [EntityFetcherFactory](api/README/#entityfetcherfactory) that turns `event.args` from the [NewContributionProposal event](api/classes/ContributionRewardWrapper#NewContributionProposal) into a [ContributionProposal](api/interfaces/ContributionProposal) entity (object or interface).
+
+!!! info
+    Look here to find out more about [how to use proposal-related events](Proposals).
+
+!!! tip
+    You can also "pipe" one `EntityFetcherFactory` to another using the [Web3EventService](api/classes/Web3EventService), chaining one entity type to another.
+
+### Comparing Almost Raw with Entity Event Fetchers
+Almost raw ([EventFetcherFactory](api/README/#eventfetcherfactory)) and entity ([EntityFetcherFactory](api/README/#entityfetcherfactory)) events each have relative pros and cons.  
+
+"Almost raw" events give you all of the information that Web3 provides about an event.
+
+Entity events only give you the entity, but the entity can contain any information you want, including everything from the raw information from the Web3 event.  That is up to the programmer.
+
+Otherwise there is little difference between the two.  They both have all of the advantages of the [EventFetcherFactory](api/README/#eventfetcherfactory).
+
+<a name="pubsubevents"></a>
 ## Arc.js Pub/Sub Events
 
-Arc.js has a pub/sub event system accessible using the [PubSubEventService](api/classes/PubSubEventService).  You can use a subclass of [PubSubEventService](api/classes/PubSubEventService) called [TransactionService](api/classes/TransactionService) to track transactions as they complete.
+Arc.js has a Pub/Sub event system accessible using the [PubSubEventService](api/classes/PubSubEventService). The Pub/Sub event system enables you to subscribe to miscellaneous events published by Arc.js.  The following section describes how to subscribe to events.
 
-### Tracking Transactions
+!!! info
+    The [PubSubEventService](api/classes/PubSubEventService) is extensively used for tracking transactions as they complete.  See more in [Transactions](Transactions).
 
-Many Arc.js functions cause transactions to occur in the chain.  Each transaction requires manual attention from the application user, and depending on the speed of the net, there may be substantial delays between each transaction and before all of the transactions in a given function have completed. So you may wish to give the user a visual sense of progress as a function proceeds towards completion.
 
-Using [TransactionService](api/classes/TransactionService), you can track when transactions are about to start happening, how many transactions there will be, and when each transaction has completed.
-
-For example, out of all functions in Arc.js, [DAO.new](api/classes/DAO#new) generates the most transactions.  Suppose you want to feed back to the user how many transaction to expect, and when each one has completed:.  Here is how you can do that:
-
-```javascript
-import { TransactionService } from "@daostack/arc.js";
-
-const subscription = TransactionService.subscribe("txReceipts.DAO.new", 
-  (topic, txEventInfo) => {
-    // the options you passed into the function (DAO.new in this case)
-    const optionsWithDefaults = txEventInfo.options;
-    // the expected number of transactions
-    const expectedNumTransactions = txEventInfo.txCount;
-    // a key that is unique to a single invocation of the function (DAO.new in this case)
-    const uniqueInvocationKey = txEventInfo.invocationKey;
-    // TransactionReceiptTruffle for the just-completed transaction.
-    // This will be null the first time the event is fired.
-    const transaction = txEventInfo.tx;
-});
-```
-
-Now you are ready to handle "txReceipts.DAO.new" events whenever you call `DAO.new`.  To let you know in advance the expected count of transactions, a "kick-off" event will be published once at the beginning of each function invocation before any transactions have begun.  In that event, `txEventInfo.tx` will be null.  The property `txEventInfo.uniqueInvocationKey` will identify the "thread" of events associated with a single function invocation.
-
-You can supply additional information in the options passed to the invoked function which are then passed back to you in the event callbacks (`txEventInfo.options`, above). For example, you may desire a tighter coupling between the events and a specific function invocation, and for you the kick-off event and invocationKey may not suffice.  In that case you could do something like:
-
-```javascript
-options.myInvocationkey = TransactionService.generateInvocationKey("DAO.new");
-```
-
-to generate a unique invocationKey.  Every call to `generateInvocationKey` generates a unique `Symbol`, regardless of the input.
-
-!!! warning "Important"
-    You must unsubscribe to the subscription or you risk memory leaks and excessive CPU usage:
-    ```javascript
-    subscription.unsubscribe();
-    ```
-
-!!! note
-    `txEventInfo.options` will usually contain the options you passed in, with default values added.  But in the case of `DAO.new`, it will not contain the default values.  If you need the default values then instead of subscribing to "txReceipts.DAO.new" you can subscribe to "txReceipts.DaoCreator" and receive events published by  [DaoCreatorWrapper.forgeOrg](api/classes/DaoCreatorWrapper#forgeOrg) and [DaoCreatorWrapper.setSchemes](api/classes/DaoCreatorWrapper#setSchemes).  Currently this would otherwise be the same as subscribing to "txReceipts.DAO.new", though it cannot be guaranteed it will always be the case in future versions of Arc.js.
-
-### Specifying Events
-You specify which event to which you wish to subscribe using a string as an event specifier (or in the code, the event "topic").  The event specifier typically incorporates an Arc contract name which will map to events published by a wrapper class for that contract.  For example, the event specifier "txReceipts.DaoCreator" refers to "txReceipts" events published by [DaoCreatorWrapper](api/classes/DaoCreatorWrapper).
+### Subscribing to Events
+You can specify the event to which you want to subscribe using a string as an event specifier (or in the code, the event "topic").  The event specifier typically incorporates an Arc contract name which will map to events published by a wrapper class for that contract.  For example, the event specifier "txReceipts.DaoCreator" refers to "txReceipts" events published by [DaoCreatorWrapper](api/classes/DaoCreatorWrapper) (using the [TransactionService](api/classes/TransactionService)).
 
 !!! note
     There are a couple of exceptions when a specific contract is not involved, namely with `DAO.new` and `ContractWrapper.setParameters` (the latter covers all calls to [ContractWrapperBase.setParameters](api/classes/ContractWrapperBase#setParameters) from all of the wrappers).

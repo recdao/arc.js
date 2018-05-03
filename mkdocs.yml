@@ -34,6 +34,7 @@ pages:
 - 'Contract Wrappers': 'Wrappers.md'
 - 'Proposals and Schemes': 'Proposals.md'
 - 'Events': 'Events.md'
+- 'Tracking Transactions': 'Transactions.md'
 - 'Scripts': 'Scripts.md'
 - 'Contract Migration': 'Migration.md'
 - 'Using GanacheDb': 'GanacheDb.md'

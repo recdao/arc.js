@@ -9,6 +9,10 @@ export class Web3EventService {
    * the result param of the callback is always guaranteed to be an array,
    * and duplicate events are removed.
    *
+   * Note that the callback parameter of `EventFetcher.get` is optional; you
+   * may alternatively obtain the promise of a `Array<TEventArgs>` from the return value
+   * of `get`.
+   * 
    * Example:
    *
    *    public NewProposal = Web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal");
@@ -72,18 +76,22 @@ export class Web3EventService {
        */
       return {
 
-        get(callback?: EventCallback<TEventArgs>): void {
-          baseEvent.get(
-            (error: Error, log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>) => {
-
-              handleEvent(error, log, callback);
+        get(callback?: EventCallback<TEventArgs>): Promise<Array<TEventArgs>> {
+          return new Promise<Array<TEventArgs>>(
+            (resolve: (result: Array<TEventArgs>) => void, reject: (error: Error) => void): void => {
+              baseEvent.get(
+                (error: Error, log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
+                  if (error) {
+                    return reject(error);
+                  }
+                  resolve(handleEvent(error, log, callback));
+                });
             });
         },
 
         watch(callback?: EventCallback<TEventArgs>): void {
           baseEvent.watch(
             (error: Error, log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>) => {
-
               handleEvent(error, log, callback);
             });
         },
@@ -140,10 +148,10 @@ export class Web3EventService {
             new Promise(
               async (resolve: (result: Array<TEntity>) => void, reject: (error: Error) => void): Promise<void> => {
 
-                const entities = new Array<TEntity>();
                 if (error) {
                   return reject(error);
                 }
+                const entities = new Array<TEntity>();
                 // transform all the log entries into entities
                 for (const event of log) {
                   const transformedEntity = await transformEventCallback(event.args);
@@ -254,7 +262,7 @@ export class Web3EventService {
     return (
       error: Error,
       log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>,
-      callback?: EventCallback<TEventArgs>): void => {
+      callback?: EventCallback<TEventArgs>): Array<TEventArgs> => {
 
       /**
        * always provide an array
@@ -284,7 +292,12 @@ export class Web3EventService {
         error = processedResult.error;
         log = processedResult.log;
       }
-      callback(error, log);
+      // invoke callback if there is one
+      if (callback) {
+        callback(error, log);
+      }
+      // return array of args in any case
+      return log.map((l: DecodedLogEntryEvent<TEventArgs>) => l.args);
     };
   }
 }
@@ -293,7 +306,7 @@ type InternalEventCallback<TEventArgs> =
   (
     error: Error, log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>,
     callback: EventCallback<TEventArgs>
-  ) => void;
+  ) => Array<TEventArgs>;
 
 export type EventCallback<TEventArgs> = (error: Error, log: Array<DecodedLogEntryEvent<TEventArgs>>) => void;
 export interface EventPreProcessorReturn<TEventArgs> { error: Error; log: Array<DecodedLogEntryEvent<TEventArgs>>; }
@@ -379,7 +392,11 @@ export type EventFetcherHandler<TEventArgs> = (callback: EventCallback<TEventArg
  * @type TEventArgs The type of the `args` object.
  */
 export interface EventFetcher<TEventArgs> {
-  get: EventFetcherHandler<TEventArgs>;
+  /**
+   * Note that `callback` is optional -- you may alternatively obtain the promise
+   * of a `Array<TEventArgs>` from the return value of `get`.
+   */
+  get: (callback?: EventCallback<TEventArgs>) => Promise<Array<TEventArgs>>;
   watch: EventFetcherHandler<TEventArgs>;
   stopWatching(): void;
 }
