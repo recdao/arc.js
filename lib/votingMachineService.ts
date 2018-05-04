@@ -2,7 +2,7 @@ import { BigNumber } from "bignumber.js";
 import { Address, HasContract, Hash } from "./commonTypes";
 import { ArcTransactionResult, DecodedLogEntryEvent, TransactionReceiptTruffle } from "./contractWrapperBase";
 import { Utils } from "./utils";
-import { EventFetcherFactory, Web3EventService } from "./web3EventService";
+import { EventFetcherFactory, Web3EventFetcher, Web3EventService } from "./web3EventService";
 import { CancelProposalEventResult, CancelVotingEventResult } from "./wrappers/absoluteVote";
 import {
   NewProposalEventResult,
@@ -46,30 +46,25 @@ export class VotingMachineService implements HasContract {
   /**
    * Get or watch events fired on the creation of a new proposal.
    */
-  public NewProposal: EventFetcherFactory<NewProposalEventResult> =
-    this.web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal", this);
+  public NewProposal: EventFetcherFactory<NewProposalEventResult>;
   /**
    * Get or watch events fired when a vote is cancelled.
    * Note you won't get this from GenesisProtocol whose proposals and votes are not cancellable
    */
-  public CancelProposal: EventFetcherFactory<CancelProposalEventResult> =
-    this.web3EventService.createEventFetcherFactory<CancelProposalEventResult>("CancelProposal", this);
+  public CancelProposal: EventFetcherFactory<CancelProposalEventResult>;
   /**
    * Get or watch events fired when proposals have been executed
    */
-  public ExecuteProposal: EventFetcherFactory<VotingMachineExecuteProposalEventResult> =
-    this.web3EventService.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>("ExecuteProposal", this);
+  public ExecuteProposal: EventFetcherFactory<VotingMachineExecuteProposalEventResult>;
   /**
    * Get or watch events fired whenever votes are cast on a proposal
    */
-  public VoteProposal: EventFetcherFactory<VoteProposalEventResult> =
-    this.web3EventService.createEventFetcherFactory<VoteProposalEventResult>("VoteProposal", this);
+  public VoteProposal: EventFetcherFactory<VoteProposalEventResult>;
   /**
    * Get or watch events fired when a voter's vote is cancelled.
    * Note you won't get this from GenesisProtocol whose proposals and votes are not cancellable
    */
-  public CancelVoting: EventFetcherFactory<CancelVotingEventResult> =
-    this.web3EventService.createEventFetcherFactory<CancelVotingEventResult>("CancelVoting", this);
+  public CancelVoting: EventFetcherFactory<CancelVotingEventResult>;
   /**
    * Instantiate VotingMachineService given the voting machine's address.
    *
@@ -86,7 +81,7 @@ export class VotingMachineService implements HasContract {
    * Get or watch NewProposal events, filtering out proposals that are no longer votable.
    */
   public get VotableProposals(): EventFetcherFactory<NewProposalEventResult> {
-    return this.web3EventService.createEventFetcherFactory<NewProposalEventResult>("NewProposal", this,
+    return this.web3EventService.createEventFetcherFactory<NewProposalEventResult>(this.contract.NewProposal,
       (error: Error, log: Array<DecodedLogEntryEvent<NewProposalEventResult>>) => {
         if (!error) {
           log = log.filter(async (event: DecodedLogEntryEvent<NewProposalEventResult>) => {
@@ -288,6 +283,16 @@ export class VotingMachineService implements HasContract {
     return voteTotals;
   }
 
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewProposal = this.web3EventService.createEventFetcherFactory<NewProposalEventResult>(this.contract.NewProposal);
+    this.CancelProposal = this.web3EventService.createEventFetcherFactory<CancelProposalEventResult>(this.contract.CancelProposal);
+    this.ExecuteProposal = this.web3EventService.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>(this.contract.ExecuteProposal);
+    this.VoteProposal = this.web3EventService.createEventFetcherFactory<VoteProposalEventResult>(this.contract.VoteProposal);
+    this.CancelVoting = this.web3EventService.createEventFetcherFactory<CancelVotingEventResult>(this.contract.CancelVoting);
+    /* tslint:enable:max-line-length */
+  }
+
   private _validateVote(vote: number): void {
     if ((typeof vote !== "number") || (vote < 0)) {
       throw new Error(`vote must be a number greater than or equal to zero`);
@@ -299,6 +304,12 @@ export class VotingMachineService implements HasContract {
  * The Arc contract `IntVoteInterface`.
  */
 export interface IntVoteInterface {
+  NewProposal: Web3EventFetcher;
+  CancelProposal: Web3EventFetcher;
+  ExecuteProposal: Web3EventFetcher;
+  VoteProposal: Web3EventFetcher;
+  CancelVoting: Web3EventFetcher;
+
   propose(numOfChoices: number,
           proposalParameters: Hash,
           avatar: Address,

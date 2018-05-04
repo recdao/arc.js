@@ -37,15 +37,13 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewContributionProposal: EventFetcherFactory<NewContributionProposalEventResult> = this.createEventFetcherFactory<NewContributionProposalEventResult>("NewContributionProposal");
-  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
-  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
-  public RedeemReputation: EventFetcherFactory<RedeemReputationEventResult> = this.createEventFetcherFactory<RedeemReputationEventResult>("RedeemReputation");
-  public RedeemEther: EventFetcherFactory<RedeemEtherEventResult> = this.createEventFetcherFactory<RedeemEtherEventResult>("RedeemEther");
-  public RedeemNativeToken: EventFetcherFactory<RedeemNativeTokenEventResult> = this.createEventFetcherFactory<RedeemNativeTokenEventResult>("RedeemNativeToken");
-  public RedeemExternalToken: EventFetcherFactory<RedeemExternalTokenEventResult> = this.createEventFetcherFactory<RedeemExternalTokenEventResult>("RedeemExternalToken");
-  /* tslint:enable:max-line-length */
+  public NewContributionProposal: EventFetcherFactory<NewContributionProposalEventResult>;
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult>;
+  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult>;
+  public RedeemReputation: EventFetcherFactory<RedeemReputationEventResult>;
+  public RedeemEther: EventFetcherFactory<RedeemEtherEventResult>;
+  public RedeemNativeToken: EventFetcherFactory<RedeemNativeTokenEventResult>;
+  public RedeemExternalToken: EventFetcherFactory<RedeemExternalTokenEventResult>;
 
   /**
    * Submit a proposal for a reward for a contribution
@@ -468,6 +466,17 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
       voteParametersHash: params[1],
       votingMachineAddress: params[2],
     };
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewContributionProposal = this.createEventFetcherFactory<NewContributionProposalEventResult>(this.contract.NewContributionProposal);
+    this.ProposalExecuted = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>(this.contract.ProposalExecuted);
+    this.RedeemReputation = this.createEventFetcherFactory<RedeemReputationEventResult>(this.contract.RedeemReputation);
+    this.RedeemEther = this.createEventFetcherFactory<RedeemEtherEventResult>(this.contract.RedeemEther);
+    this.RedeemNativeToken = this.createEventFetcherFactory<RedeemNativeTokenEventResult>(this.contract.RedeemNativeToken);
+    this.RedeemExternalToken = this.createEventFetcherFactory<RedeemExternalTokenEventResult>(this.contract.RedeemExternalToken);
+    /* tslint:enable:max-line-length */
   }
 
   private async computeRemainingReward(

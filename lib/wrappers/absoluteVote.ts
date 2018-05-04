@@ -26,13 +26,11 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewProposal: EventFetcherFactory<NewProposalEventResult> = this.createEventFetcherFactory<NewProposalEventResult>("NewProposal");
-  public CancelProposal: EventFetcherFactory<CancelProposalEventResult> = this.createEventFetcherFactory<CancelProposalEventResult>("CancelProposal");
-  public ExecuteProposal: EventFetcherFactory<VotingMachineExecuteProposalEventResult> = this.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>("ExecuteProposal");
-  public VoteProposal: EventFetcherFactory<VoteProposalEventResult> = this.createEventFetcherFactory<VoteProposalEventResult>("VoteProposal");
-  public CancelVoting: EventFetcherFactory<CancelVotingEventResult> = this.createEventFetcherFactory<CancelVotingEventResult>("CancelVoting");
-  /* tslint:enable:max-line-length */
+  public NewProposal: EventFetcherFactory<NewProposalEventResult>;
+  public CancelProposal: EventFetcherFactory<CancelProposalEventResult>;
+  public ExecuteProposal: EventFetcherFactory<VotingMachineExecuteProposalEventResult>;
+  public VoteProposal: EventFetcherFactory<VoteProposalEventResult>;
+  public CancelVoting: EventFetcherFactory<CancelVotingEventResult>;
 
   /**
    * Vote on a proposal
@@ -118,6 +116,16 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
       reputation: params[0],
       votePerc: params[1].toNumber(),
     };
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewProposal = this.createEventFetcherFactory<NewProposalEventResult>(this.contract.NewProposal);
+    this.CancelProposal = this.createEventFetcherFactory<CancelProposalEventResult>(this.contract.CancelProposal);
+    this.ExecuteProposal = this.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>(this.contract.ExecuteProposal);
+    this.VoteProposal = this.createEventFetcherFactory<VoteProposalEventResult>(this.contract.VoteProposal);
+    this.CancelVoting = this.createEventFetcherFactory<CancelVotingEventResult>(this.contract.CancelVoting);
+    /* tslint:enable:max-line-length */
   }
 }
 

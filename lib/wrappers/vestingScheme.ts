@@ -26,15 +26,13 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
-  public AgreementProposal: EventFetcherFactory<AgreementProposalEventResult> = this.createEventFetcherFactory<AgreementProposalEventResult>("AgreementProposal");
-  public NewVestedAgreement: EventFetcherFactory<NewVestedAgreementEventResult> = this.createEventFetcherFactory<NewVestedAgreementEventResult>("NewVestedAgreement");
-  public SignToCancelAgreement: EventFetcherFactory<SignToCancelAgreementEventResult> = this.createEventFetcherFactory<SignToCancelAgreementEventResult>("SignToCancelAgreement");
-  public RevokeSignToCancelAgreement: EventFetcherFactory<RevokeSignToCancelAgreementEventResult> = this.createEventFetcherFactory<RevokeSignToCancelAgreementEventResult>("RevokeSignToCancelAgreement");
-  public AgreementCancel: EventFetcherFactory<AgreementCancelEventResult> = this.createEventFetcherFactory<AgreementCancelEventResult>("AgreementCancel");
-  public Collect: EventFetcherFactory<CollectEventResult> = this.createEventFetcherFactory<CollectEventResult>("Collect");
-  /* tslint:enable:max-line-length */
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult>;
+  public AgreementProposal: EventFetcherFactory<AgreementProposalEventResult>;
+  public NewVestedAgreement: EventFetcherFactory<NewVestedAgreementEventResult>;
+  public SignToCancelAgreement: EventFetcherFactory<SignToCancelAgreementEventResult>;
+  public RevokeSignToCancelAgreement: EventFetcherFactory<RevokeSignToCancelAgreementEventResult>;
+  public AgreementCancel: EventFetcherFactory<AgreementCancelEventResult>;
+  public Collect: EventFetcherFactory<CollectEventResult>;
 
   /**
    * see CreateVestingAgreementConfig
@@ -294,6 +292,18 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
       voteParametersHash: params[0],
       votingMachineAddress: params[1],
     };
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.ProposalExecuted = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>(this.contract.ProposalExecuted);
+    this.AgreementProposal = this.createEventFetcherFactory<AgreementProposalEventResult>(this.contract.AgreementProposal);
+    this.NewVestedAgreement = this.createEventFetcherFactory<NewVestedAgreementEventResult>(this.contract.NewVestedAgreement);
+    this.SignToCancelAgreement = this.createEventFetcherFactory<SignToCancelAgreementEventResult>(this.contract.SignToCancelAgreement);
+    this.RevokeSignToCancelAgreement = this.createEventFetcherFactory<RevokeSignToCancelAgreementEventResult>(this.contract.RevokeSignToCancelAgreement);
+    this.AgreementCancel = this.createEventFetcherFactory<AgreementCancelEventResult>(this.contract.AgreementCancel);
+    this.Collect = this.createEventFetcherFactory<CollectEventResult>(this.contract.Collect);
+    /* tslint:enable:max-line-length */
   }
 
   private async validateCreateParams(options: CommonVestingAgreementConfig): Promise<void> {

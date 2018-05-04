@@ -23,10 +23,8 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewOrg: EventFetcherFactory<NewOrgEventResult> = this.createEventFetcherFactory<NewOrgEventResult>("NewOrg");
-  public InitialSchemesSet: EventFetcherFactory<InitialSchemesSetEventResult> = this.createEventFetcherFactory<InitialSchemesSetEventResult>("InitialSchemesSet");
-  /* tslint:enable:max-line-length */
+  public NewOrg: EventFetcherFactory<NewOrgEventResult>;
+  public InitialSchemesSet: EventFetcherFactory<InitialSchemesSetEventResult>;
 
   /**
    * Create a new DAO
@@ -310,6 +308,12 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
     return 2 + numSchemes + numSchemesWithDefaultParams;
   }
 
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewOrg = this.createEventFetcherFactory<NewOrgEventResult>(this.contract.NewOrg);
+    this.InitialSchemesSet = this.createEventFetcherFactory<InitialSchemesSetEventResult>(this.contract.InitialSchemesSet);
+    /* tslint:enable:max-line-length */
+  }
 }
 
 /**

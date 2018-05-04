@@ -39,14 +39,12 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewProposal: EventFetcherFactory<NewProposalEventResult> = this.createEventFetcherFactory<NewProposalEventResult>("NewProposal");
-  public ExecuteProposal: EventFetcherFactory<GenesisProtocolExecuteProposalEventResult> = this.createEventFetcherFactory<GenesisProtocolExecuteProposalEventResult>("ExecuteProposal");
-  public VoteProposal: EventFetcherFactory<VoteProposalEventResult> = this.createEventFetcherFactory<VoteProposalEventResult>("VoteProposal");
-  public Stake: EventFetcherFactory<StakeEventResult> = this.createEventFetcherFactory<StakeEventResult>("Stake");
-  public Redeem: EventFetcherFactory<RedeemEventResult> = this.createEventFetcherFactory<RedeemEventResult>("Redeem");
-  public RedeemReputation: EventFetcherFactory<RedeemReputationEventResult> = this.createEventFetcherFactory<RedeemReputationEventResult>("RedeemReputation");
-  /* tslint:enable:max-line-length */
+  public NewProposal: EventFetcherFactory<NewProposalEventResult>;
+  public ExecuteProposal: EventFetcherFactory<GenesisProtocolExecuteProposalEventResult>;
+  public VoteProposal: EventFetcherFactory<VoteProposalEventResult>;
+  public Stake: EventFetcherFactory<StakeEventResult>;
+  public Redeem: EventFetcherFactory<RedeemEventResult>;
+  public RedeemReputation: EventFetcherFactory<RedeemReputationEventResult>;
 
   /**
    * Create a proposal
@@ -866,6 +864,17 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
       votersGainRepRatioFromLostRep: params[11].toNumber(),
       votersReputationLossRatio: params[10].toNumber(),
     };
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewProposal = this.createEventFetcherFactory<NewProposalEventResult>(this.contract.NewProposal);
+    this.ExecuteProposal = this.createEventFetcherFactory<GenesisProtocolExecuteProposalEventResult>(this.contract.ExecuteProposal);
+    this.VoteProposal = this.createEventFetcherFactory<VoteProposalEventResult>(this.contract.VoteProposal);
+    this.Stake = this.createEventFetcherFactory<StakeEventResult>(this.contract.Stake);
+    this.Redeem = this.createEventFetcherFactory<RedeemEventResult>(this.contract.Redeem);
+    this.RedeemReputation = this.createEventFetcherFactory<RedeemReputationEventResult>(this.contract.RedeemReputation);
+    /* tslint:enable:max-line-length */
   }
 
   private async _validateVote(vote: number, proposalId: Hash): Promise<void> {

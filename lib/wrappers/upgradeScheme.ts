@@ -24,12 +24,10 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewUpgradeProposal: EventFetcherFactory<NewUpgradeProposalEventResult> = this.createEventFetcherFactory<NewUpgradeProposalEventResult>("NewUpgradeProposal");
-  public ChangeUpgradeSchemeProposal: EventFetcherFactory<ChangeUpgradeSchemeProposalEventResult> = this.createEventFetcherFactory<ChangeUpgradeSchemeProposalEventResult>("ChangeUpgradeSchemeProposal");
-  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
-  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
-  /* tslint:enable:max-line-length */
+  public NewUpgradeProposal: EventFetcherFactory<NewUpgradeProposalEventResult>;
+  public ChangeUpgradeSchemeProposal: EventFetcherFactory<ChangeUpgradeSchemeProposalEventResult>;
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult>;
+  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult>;
 
   /*******************************************
    * proposeController
@@ -191,6 +189,15 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
   public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableUpgradeSchemeProposal> {
     const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
     return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewUpgradeProposal = this.createEventFetcherFactory<NewUpgradeProposalEventResult>(this.contract.NewUpgradeProposal);
+    this.ChangeUpgradeSchemeProposal = this.createEventFetcherFactory<ChangeUpgradeSchemeProposalEventResult>(this.contract.ChangeUpgradeSchemeProposal);
+    this.ProposalExecuted = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>(this.contract.ProposalExecuted);
+    this.ProposalDeleted = this.createEventFetcherFactory<ProposalDeletedEventResult>(this.contract.ProposalDeleted);
+    /* tslint:enable:max-line-length */
   }
 
   private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VotableUpgradeSchemeProposal {

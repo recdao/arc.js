@@ -23,12 +23,10 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewGlobalConstraintsProposal: EventFetcherFactory<NewGlobalConstraintsProposalEventResult> = this.createEventFetcherFactory<NewGlobalConstraintsProposalEventResult>("NewGlobalConstraintsProposal");
-  public RemoveGlobalConstraintsProposal: EventFetcherFactory<RemoveGlobalConstraintsProposalEventResult> = this.createEventFetcherFactory<RemoveGlobalConstraintsProposalEventResult>("RemoveGlobalConstraintsProposal");
-  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
-  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
-  /* tslint:enable:max-line-length */
+  public NewGlobalConstraintsProposal: EventFetcherFactory<NewGlobalConstraintsProposalEventResult>;
+  public RemoveGlobalConstraintsProposal: EventFetcherFactory<RemoveGlobalConstraintsProposalEventResult>;
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult>;
+  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult>;
 
   public async proposeToAddModifyGlobalConstraint(
     options: ProposeToAddModifyGlobalConstraintParams = {} as ProposeToAddModifyGlobalConstraintParams)
@@ -193,6 +191,15 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
     };
   }
 
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewGlobalConstraintsProposal = this.createEventFetcherFactory<NewGlobalConstraintsProposalEventResult>(this.contract.NewGlobalConstraintsProposal);
+    this.RemoveGlobalConstraintsProposal = this.createEventFetcherFactory<RemoveGlobalConstraintsProposalEventResult>(this.contract.RemoveGlobalConstraintsProposal);
+    this.ProposalExecuted = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>(this.contract.ProposalExecuted);
+    this.ProposalDeleted = this.createEventFetcherFactory<ProposalDeletedEventResult>(this.contract.ProposalDeleted);
+    /* tslint:enable:max-line-length */
+
+  }
   private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VotableGlobalConstraintProposal {
     return {
       constraintAddress: propsArray[0],

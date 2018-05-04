@@ -24,12 +24,10 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewVoteProposal: EventFetcherFactory<NewVoteProposalEventResult> = this.createEventFetcherFactory<NewVoteProposalEventResult>("NewVoteProposal");
-  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
-  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
-  public VoteOnBehalf: EventFetcherFactory<VoteOnBehalfEventResult> = this.createEventFetcherFactory<VoteOnBehalfEventResult>("VoteOnBehalf");
-  /* tslint:enable:max-line-length */
+  public NewVoteProposal: EventFetcherFactory<NewVoteProposalEventResult>;
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult>;
+  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult>;
+  public VoteOnBehalf: EventFetcherFactory<VoteOnBehalfEventResult>;
 
   public async proposeVote(
     options: VoteInOrganizationProposeVoteConfig = {} as VoteInOrganizationProposeVoteConfig)
@@ -142,6 +140,15 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
       voteParametersHash: params[1],
       votingMachineAddress: params[0],
     };
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewVoteProposal = this.createEventFetcherFactory<NewVoteProposalEventResult>(this.contract.NewVoteProposal);
+    this.ProposalExecuted = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>(this.contract.ProposalExecuted);
+    this.ProposalDeleted = this.createEventFetcherFactory<ProposalDeletedEventResult>(this.contract.ProposalDeleted);
+    this.VoteOnBehalf = this.createEventFetcherFactory<VoteOnBehalfEventResult>(this.contract.VoteOnBehalf);
+    /* tslint:enable:max-line-length */
   }
 
   private convertProposalPropsArrayToObject(

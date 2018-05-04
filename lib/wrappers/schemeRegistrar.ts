@@ -23,12 +23,10 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
    * Events
    */
 
-  /* tslint:disable:max-line-length */
-  public NewSchemeProposal: EventFetcherFactory<NewSchemeProposalEventResult> = this.createEventFetcherFactory<NewSchemeProposalEventResult>("NewSchemeProposal");
-  public RemoveSchemeProposal: EventFetcherFactory<RemoveSchemeProposalEventResult> = this.createEventFetcherFactory<RemoveSchemeProposalEventResult>("RemoveSchemeProposal");
-  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult> = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>("ProposalExecuted");
-  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult> = this.createEventFetcherFactory<ProposalDeletedEventResult>("ProposalDeleted");
-  /* tslint:enable:max-line-length */
+  public NewSchemeProposal: EventFetcherFactory<NewSchemeProposalEventResult>;
+  public RemoveSchemeProposal: EventFetcherFactory<RemoveSchemeProposalEventResult>;
+  public ProposalExecuted: EventFetcherFactory<SchemeProposalExecutedEventResult>;
+  public ProposalDeleted: EventFetcherFactory<ProposalDeletedEventResult>;
 
   public async proposeToAddModifyScheme(
     options: ProposeToAddModifySchemeParams = {} as ProposeToAddModifySchemeParams)
@@ -232,6 +230,15 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
   public async getVotableProposal(avatarAddress: Address, proposalId: Hash): Promise<VotableSchemeRegistrarProposal> {
     const proposalParams = await this.contract.organizationsProposals(avatarAddress, proposalId);
     return this.convertProposalPropsArrayToObject(proposalParams, proposalId);
+  }
+
+  protected hydrated(): void {
+    /* tslint:disable:max-line-length */
+    this.NewSchemeProposal = this.createEventFetcherFactory<NewSchemeProposalEventResult>(this.contract.NewSchemeProposal);
+    this.RemoveSchemeProposal = this.createEventFetcherFactory<RemoveSchemeProposalEventResult>(this.contract.RemoveSchemeProposal);
+    this.ProposalExecuted = this.createEventFetcherFactory<SchemeProposalExecutedEventResult>(this.contract.ProposalExecuted);
+    this.ProposalDeleted = this.createEventFetcherFactory<ProposalDeletedEventResult>(this.contract.ProposalDeleted);
+    /* tslint:enable:max-line-length */
   }
 
   private convertProposalPropsArrayToObject(propsArray: Array<any>, proposalId: Hash): VotableSchemeRegistrarProposal {

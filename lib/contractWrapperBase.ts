@@ -66,6 +66,7 @@ export abstract class ContractWrapperBase implements HasContract {
     try {
       this.contract = await this.solidityContract.new(...rest)
         .then((contract: any) => contract, (error: any) => { throw error; });
+      this.hydrated();
     } catch (ex) {
       LoggingService.error(`hydrateFromNew failing: ${ex}`);
       return undefined;
@@ -82,6 +83,7 @@ export abstract class ContractWrapperBase implements HasContract {
     try {
       this.contract = await this.solidityContract.at(address)
         .then((contract: any) => contract, (error: any) => { throw error; });
+      this.hydrated();
     } catch (ex) {
       LoggingService.error(`hydrateFromAt failing: ${ex}`);
       return undefined;
@@ -97,6 +99,7 @@ export abstract class ContractWrapperBase implements HasContract {
     try {
       this.contract = await this.solidityContract.deployed()
         .then((contract: any) => contract, (error: any) => { throw error; });
+      this.hydrated();
     } catch (ex) {
       LoggingService.error(`hydrateFromDeployed failing: ${ex}`);
       return undefined;
@@ -149,6 +152,12 @@ export abstract class ContractWrapperBase implements HasContract {
     return avatarService.getController();
   }
 
+  /**
+   * invoked to let base classes know that the `contract` is available.
+   */
+  /* tslint:disable-next-line:no-empty */
+  protected hydrated(): void { }
+
   protected async _setParameters(functionName: string, ...params: Array<any>): Promise<ArcTransactionDataResult<Hash>> {
 
     const parametersHash: Hash = await this.contract.getParametersHash(...params);
@@ -190,8 +199,8 @@ export abstract class ContractWrapperBase implements HasContract {
    * @type TArgs
    * @param eventName
    */
-  protected createEventFetcherFactory<TArgs>(eventName: string): EventFetcherFactory<TArgs> {
-    return this.web3EventService.createEventFetcherFactory(eventName, this);
+  protected createEventFetcherFactory<TArgs>(baseEvent: any): EventFetcherFactory<TArgs> {
+    return this.web3EventService.createEventFetcherFactory(baseEvent);
   }
 
   protected validateStandardSchemeParams(params: StandardSchemeParams): void {
