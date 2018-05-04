@@ -493,7 +493,7 @@ export class Web3EventSubscription<TEventArgs> implements IEventSubscription {
 
   public unsubscribe(): void {
     this.fetcher.stopWatching();
-    setTimeout(this.subscription.unsubscribe(), 0);
+    setTimeout(this.subscription.unsubscribe, 0);
   }
 }
 

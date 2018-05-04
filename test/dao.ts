@@ -65,14 +65,21 @@ describe("DAO", () => {
 
     const daos = await daoEventFetcherFactory({}, { fromBlock: 0 }).get();
     assert.isOk(daos, "daos array not returned");
-    const originaCountOfDaos = daos.length;
-    let count = 0;
+    const originalCountOfDaos = daos.length;
+    let countWatch = 0;
+    let countSubscribe = 0;
 
     const watcher = daoEventFetcherFactory({}, { fromBlock: 0 });
 
     watcher.watch(
-      async (error: Error, daoAddresses: Address): Promise<void> => {
-        ++count;
+      (error: Error, daoAddress: Address): void => {
+        ++countWatch;
+      });
+
+    const subscription = watcher.subscribe("getDaos",
+      (eventName: string, daoAddress: Address): void => {
+        assert.equal(eventName, "getDaos");
+        ++countSubscribe;
       });
 
     await DAO.new({
@@ -82,8 +89,10 @@ describe("DAO", () => {
     });
 
     await helpers.sleep(1000);
-    await watcher.stopWatching();
-    assert.equal(count, originaCountOfDaos + 1, `Should have observed one new dao`);
+    watcher.stopWatching();
+    subscription.unsubscribe();
+    assert.equal(countWatch, originalCountOfDaos + 1, `Should have watched one new dao`);
+    assert.equal(countSubscribe, originalCountOfDaos + 1, `Should have subscribed to one new dao`);
   });
 
   it("default config for counting the number of transactions", async () => {

@@ -122,8 +122,7 @@ export class DAO {
     return new Promise<Array<Address>>(
       async (resolve: (daos: Array<Address>) => void): Promise<void> => {
         const daoEventFetcherFactory = await DAO.getDaoCreationEvents(options);
-        const daos = await daoEventFetcherFactory({}, { fromBlock: 0 }).get();
-        resolve(daos);
+        resolve(await daoEventFetcherFactory({}, { fromBlock: 0 }).get());
       });
   }
 
@@ -147,8 +146,7 @@ export class DAO {
     return web3EventService.createEntityFetcherFactory(
       daoCreator.InitialSchemesSet,
       async (args: InitialSchemesSetEventResult): Promise<Address> => {
-        const avatarAddress = args._avatar;
-        return Promise.resolve(avatarAddress);
+        return Promise.resolve(args._avatar);
       });
   }
 
