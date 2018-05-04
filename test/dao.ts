@@ -71,9 +71,8 @@ describe("DAO", () => {
     const watcher = daoEventFetcherFactory({}, { fromBlock: 0 });
 
     watcher.watch(
-      async (error: Error, daoAddresses: Promise<Array<Address>>): Promise<void> => {
-        const addresses = await daoAddresses;
-        count += addresses.length;
+      async (error: Error, daoAddresses: Address): Promise<void> => {
+        ++count;
       });
 
     await DAO.new({
