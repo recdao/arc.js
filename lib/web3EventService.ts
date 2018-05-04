@@ -263,8 +263,8 @@ export class Web3EventService {
    * Convert the EntityFetcherFactory<TEntitySrc, TEntityOriginalSrc> into an
    * EntityFetcherFactory<TEntityDest, TEntitySrc>.
    *
-   * @param entityFetcherFactory
-   * @param transformEventCallback
+   * @param entityFetcherFactory The source EntityFetcherFactory
+   * @param transformEventCallback Converts TEntitySrc into TEntityDest
    */
   public pipeEntityFetcherFactory<TEntityDest, TEntitySrc, TEntityOriginalSrc>(
     entityFetcherFactory: EntityFetcherFactory<TEntitySrc, TEntityOriginalSrc>,
@@ -351,8 +351,8 @@ export class Web3EventService {
         }
       }
 
-      // return array of args in any case
-      return log.map((l: DecodedLogEntryEvent<TEventArgs>) => l);
+      // return array of DecodedLogEntryEvents in any case
+      return log;
     };
   }
 }
@@ -397,14 +397,35 @@ export type EntityWatchSubscriptionCallback<TEntity> = (eventName: string, paylo
  * Returned by EntityFetcherFactory<TDest, TSrc>.
  */
 export interface EntityFetcher<TDest, TSrc> {
+  /**
+   * Transforms TSrc to TDest.  This is called automatically by the system.  It is
+   * exposed here for use by `pipeEntityFetcherFactory`.
+   */
   transformEventCallback: TransformEventCallback<TDest, TSrc>;
   /**
-   * Note that `callback` is optional -- you may alternatively obtain the promise
-   * of a `Array<TEntity>` from the return value of `get`.
+   * Get an array of `TDest` from Web3, given the filter supplied to the EntityFetcherFactory.
+   * You may supply a callback, which will be given the array, or you may
+   * accept the promise of the array from the return value of `get`.
    */
   get: (callback?: EntityGetCallback<TDest>) => Promise<Array<TDest>>;
+  /**
+   * Watch for `TDest`s from Web3, given the filter supplied to the EntityFetcherFactory.
+   * The callback is invoked once per event firing.
+   */
   watch: (callback: EntityWatchCallback<TDest>) => void;
+  /**
+   * Watch for `TDest`s from Web3, given the filter supplied to the EntityFetcherFactory.
+   * The Pub.Sub is published once per event firing.
+   * `subscribe` returns the subscription on which you must remember to call `unsubscribe` when you are
+   * done watching.
+   *
+   * Supply whatever name you want for `eventName`.  This enables you to scope
+   * event handlers across event types and schemes.
+   */
   subscribe: (eventName: string, callback: EntityWatchSubscriptionCallback<TDest>) => IEventSubscription;
+  /**
+   * Stop watching the event.
+   */
   stopWatching(): void;
 }
 
@@ -448,12 +469,29 @@ export type EventWatchSubscriptionCallback<TEventArgs> =
  */
 export interface EventFetcher<TEventArgs> {
   /**
-   * Note that `callback` is optional -- you may alternatively obtain the promise
-   * of a `Array<TEventArgs>` from the return value of `get`.
+   * Get an array of `DecodedLogEntryEvent` from Web3, given the filter supplied to the EventFetcherFactory.
+   * You may supply a callback, which will be given the array, or you may
+   * accept the promise of the array from the return value of `get`.
    */
   get: (callback?: EventGetCallback<TEventArgs>) => Promise<Array<DecodedLogEntryEvent<TEventArgs>>>;
+  /**
+   * Watch for `DecodedLogEntryEvent`s from Web3, given the filter supplied to the EventFetcherFactory.
+   * The Pub.Sub is published once per event firing.
+   * `subscribe` returns the subscription on which you must remember to call `unsubscribe` when you are
+   * done watching.
+   *
+   * Supply whatever name you want for `eventName`.  This enables you to scope
+   * event handlers across event types and schemes.
+   */
   subscribe: (eventName: string, callback: EventWatchSubscriptionCallback<TEventArgs>) => IEventSubscription;
+  /**
+   * Watch for `DecodedLogEntryEvent`s from Web3, given the filter supplied to the EventFetcherFactory.
+   * The callback is invoked once per event firing.
+   */
   watch: (callback: EventWatchCallback<TEventArgs>) => void;
+  /**
+   * Stop watching the event.
+   */
   stopWatching(): void;
 }
 

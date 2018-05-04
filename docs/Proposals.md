@@ -25,5 +25,10 @@ Often we use schemes for working with proposals. Any scheme that works with prop
 ## Proposals
 [More on Proposals to Come]
 
+<a name="proposalevents"></a>
+### Proposal Events
+One example of this, from [ContributionRewardWrapper](api/classes/ContributionRewardWrapper), is a function that returns a promise of an [EntityFetcherFactory](api/README/#entityfetcherfactory) that turns `event.args` from the [NewContributionProposal event](api/classes/ContributionRewardWrapper#NewContributionProposal)
+ into a [ContributionProposal](api/interfaces/ContributionProposal) entity (object or interface).
+
 ### Voting Machines
 [More on Voting Machines to Come]
