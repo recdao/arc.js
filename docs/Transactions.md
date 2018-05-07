@@ -4,7 +4,7 @@ Many Arc.js functions cause transactions to occur in the chain.  Each transactio
 
 Using [TransactionService](api/classes/TransactionService), you can track when transactions are about to start happening, how many transactions there will be, and when each transaction has completed.
 
-For example, out of all functions in Arc.js, [DAO.new](api/classes/DAO#new) generates the most transactions.  Suppose you want to feed back to the user how many transaction to expect, and when each one has completed:.  Here is how you can do that:
+For example, out of all functions in Arc.js, [DAO.new](api/classes/DAO#new) generates the most transactions.  Suppose you want to feed back to the user how many transaction to expect, and when each one has completed.  Here is how you can do that:
 
 ```javascript
 import { TransactionService } from "@daostack/arc.js";
@@ -23,15 +23,7 @@ const subscription = TransactionService.subscribe("txReceipts.DAO.new",
 });
 ```
 
-Now you are ready to handle "txReceipts.DAO.new" events whenever you call `DAO.new`.  To let you know in advance the expected count of transactions, a "kick-off" event will be published once at the beginning of each function invocation before any transactions have begun.  In that event, `txEventInfo.tx` will be null.  The property `txEventInfo.uniqueInvocationKey` will identify the "thread" of events associated with a single function invocation.
-
-You can supply additional information in the options passed to the invoked function which are then passed back to you in the event callbacks (`txEventInfo.options`, above). For example, you may desire a tighter coupling between the events and a specific function invocation, and for you the kick-off event and invocationKey may not suffice.  In that case you could do something like:
-
-```javascript
-options.myInvocationkey = TransactionService.generateInvocationKey("DAO.new");
-```
-
-to generate a unique invocationKey.  Every call to `generateInvocationKey` generates a unique `Symbol`, regardless of the input.
+Now you are ready to handle "txReceipts.DAO.new" events whenever you call `DAO.new`.
 
 !!! warning "Important"
     You must unsubscribe to the subscription or you risk memory leaks and excessive CPU usage:
@@ -39,5 +31,24 @@ to generate a unique invocationKey.  Every call to `generateInvocationKey` gener
     subscription.unsubscribe();
     ```
 
-!!! note
-    `txEventInfo.options` will usually contain the options you passed in, with default values added.  But in the case of `DAO.new`, it will not contain the default values.  If you need the default values then instead of subscribing to "txReceipts.DAO.new" you can subscribe to "txReceipts.DaoCreator" and receive events published by  [DaoCreatorWrapper.forgeOrg](api/classes/DaoCreatorWrapper#forgeOrg) and [DaoCreatorWrapper.setSchemes](api/classes/DaoCreatorWrapper#setSchemes).  Currently this would otherwise be the same as subscribing to "txReceipts.DAO.new", though it cannot be guaranteed it will always be the case in future versions of Arc.js.
+The event topic string defines a hierarchical scope and identifies the contract from which the transactions are generated:
+
+- "txReceipts" subscribes to all events published by [TransactionService](api/classes/TransactionService)
+- "txReceipts.[ContractName]" subscribes to all events published by [TransactionService](api/classes/TransactionService) and the "ContractName]Wrapper" class
+- "txReceipts.[ContractName].[functionName]" subscribes to all events published by [TransactionService](api/classes/TransactionService), the "ContractName]Wrapper" class and the given function
+
+To let you know in advance the expected count of transactions, a single "kick-off" event is published at the beginning of each function invocation and before any transactions have begun.  In that event, `txEventInfo.tx` will be null.  The property `txEventInfo.uniqueInvocationKey` uniquely identifies the "thread" of events associated with a single function invocation.
+
+You can supply anything you want in the options passed to the invoked function.  The entire object will be passed back to you in the event callback (`txEventInfo.options`, above). For example, you may desire a tighter coupling between the events and a specific function invocation, so for you the kick-off event and invocationKey may not suffice.  In that case you could generate a key like this:
+
+```javascript
+options.myInvocationkey = TransactionService.generateInvocationKey("DAO.new");
+```
+
+Note that every call to `generateInvocationKey` generates a unique `Symbol`, regardless of the input.
+In any case, this is just a convenience method, you can use whatever means you want to generate a key.  
+
+`txEventInfo.options` will usually contain the options you passed in, with default values added.  But in the case of `DAO.new`, it will not contain the default values.  If you need to see the default values for `DAO.new` then instead of subscribing to "txReceipts.DAO.new" you can subscribe to "txReceipts.DaoCreator" and receive events published by  [DaoCreatorWrapper.forgeOrg](api/classes/DaoCreatorWrapper#forgeOrg) and [DaoCreatorWrapper.setSchemes](api/classes/DaoCreatorWrapper#setSchemes).  This would otherwise be the same as subscribing to "txReceipts.DAO.new".
+
+!!! Tip
+    You can see the actual values passed to most of the Arc contract functions by setting the LogLevel to `LogLevel.debug`.  See the [LoggingService](api/classes/LoggingService).

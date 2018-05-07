@@ -119,11 +119,8 @@ export class DAO {
    * @param options
    */
   public static async getDaos(options: GetDaosOptions = {}): Promise<Array<Address>> {
-    return new Promise<Array<Address>>(
-      async (resolve: (daos: Array<Address>) => void): Promise<void> => {
-        const daoEventFetcherFactory = await DAO.getDaoCreationEvents(options);
-        resolve(await daoEventFetcherFactory({}, { fromBlock: 0 }).get());
-      });
+    const daoEventFetcherFactory = await DAO.getDaoCreationEvents(options);
+    return daoEventFetcherFactory({}, { fromBlock: 0 }).get();
   }
 
   /**

@@ -4,7 +4,7 @@ import { IEventSubscription, PubSubEventService } from "./pubSubEventService";
 /**
  * Enables you to track the completion of transactions triggered by Arc.js functions.
  * You can subscribe to events that tell you how many transactions are anticipated when
- * the transactions have completed.  For more information, see [subscribe](TransactionService#subscribe).
+ * the transactions have completed.  For more information, see [Tracking Transactions](/Transactions).
  */
 export class TransactionService extends PubSubEventService {
 

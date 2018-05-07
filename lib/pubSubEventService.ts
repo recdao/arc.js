@@ -1,6 +1,10 @@
 import * as PubSub from "pubsub-js";
 import { LoggingService } from "./loggingService";
 
+/**
+ * A Pub/Sub event system that enables you to subscribe to various events published by Arc.js.
+ * See [Events](/Events).
+ */
 export class PubSubEventService {
 
   /**
