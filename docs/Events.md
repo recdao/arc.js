@@ -5,7 +5,7 @@ Arc.js offers two types of event systems:  [Pub/Sub](#pubsubevents) and [Web3](w
 The Web3 events system also contains a hybrid of the two systems, enabling you to watch a Web3 event by subscribing to a Pub/Sub event.
 
 <a name="pubsubevents"></a>
-## Arc.js Pub/Sub Events
+## Pub/Sub Events
 
 The [PubSubEventService](api/classes/PubSubEventService) provides a Pub/Sub event system that enables you to subscribe to various events published by Arc.js.
 
@@ -62,7 +62,7 @@ PubSubEventService.unsubscribe(aCallback);
 ```
 
 <a name="web3events"></a>
-## Arc Web3 Events
+## Web3 Events
 
 We refer to "Web3 events" as the events that originate from Arc contracts and are served up by Web3. (see the [Web3 documentation on contract events](https://github.com/ethereum/wiki/wiki/JavaScript-API#contract-events)).
 
@@ -156,7 +156,7 @@ Further, any number of code components can use [PubSubEventService.subscribe](/a
 
 See more about how to use Pub/Sub events [here](#subscribing).
 
-## Comparing Enhanced Web3 with Entity Event Fetchers
+## Comparing Enhanced Web3 with Entity for Web3 Event Fetchers
 Enhanced Web3 ([EventFetcherFactory](api/README/#eventfetcherfactory)) and entity ([EntityFetcherFactory](api/README/#entityfetcherfactory)) events each have relative pros and cons.  
 
 Enhanced Web3 events give you all of the information that Web3 provides about an event.
