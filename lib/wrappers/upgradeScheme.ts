@@ -140,7 +140,7 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
+        votingMachine: await this.getVotingMachine(avatarAddress),
       });
   }
 
@@ -160,7 +160,7 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
+        votingMachine: await this.getVotingMachine(avatarAddress),
       });
   }
 

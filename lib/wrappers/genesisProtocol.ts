@@ -4,24 +4,20 @@ import {
   Address,
   BinaryVoteResult,
   DefaultSchemePermissions,
-  GetVoteStatusConfig,
   Hash,
   SchemePermissions,
   SchemeWrapper,
-  VoteConfig
 } from "../commonTypes";
 import { ConfigService } from "../configService";
 import {
   ArcTransactionDataResult,
-  ArcTransactionProposalResult,
-  ArcTransactionResult,
-  ContractWrapperBase
+  ArcTransactionResult
 } from "../contractWrapperBase";
-import { ContractWrapperFactory } from "../contractWrapperFactory";
+import { ContractWrapperFactory, IContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { VotingMachineService } from "../votingMachineService";
+import { OwnerVoteOptions, ProposalIdOption, VotingMachineBase } from "../votingMachineBase";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   NewProposalEventResult,
@@ -30,11 +26,11 @@ import {
   VotingMachineExecuteProposalEventResult,
 } from "./commonEventInterfaces";
 
-export class GenesisProtocolWrapper extends ContractWrapperBase implements SchemeWrapper {
+export class GenesisProtocolWrapper extends VotingMachineBase implements SchemeWrapper {
 
   public name: string = "GenesisProtocol";
   public friendlyName: string = "Genesis Protocol";
-  public factory: ContractWrapperFactory<GenesisProtocolWrapper> = GenesisProtocolFactory;
+  public factory: IContractWrapperFactory<GenesisProtocolWrapper> = GenesisProtocolFactory;
   /**
    * Events
    */
@@ -45,55 +41,6 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   public Stake: EventFetcherFactory<StakeEventResult>;
   public Redeem: EventFetcherFactory<RedeemEventResult>;
   public RedeemReputation: EventFetcherFactory<RedeemReputationEventResult>;
-
-  /**
-   * Create a proposal
-   * @param {ProposeVoteConfig} options
-   * @returns Promise<ArcTransactionProposalResult>
-   */
-  public async propose(options: ProposeVoteConfig = {} as ProposeVoteConfig): Promise<ArcTransactionProposalResult> {
-    /**
-     * see GenesisProtocolProposeVoteConfig
-     */
-    const defaults = {
-      numOfChoices: 0,
-      proposer: await Utils.getDefaultAccount(),
-    };
-
-    options = Object.assign({}, defaults, options);
-
-    if (!options.avatar) {
-      throw new Error("avatar is not defined");
-    }
-
-    if (!options.executable) {
-      throw new Error("executable is not defined");
-    }
-
-    if (!options.proposer) {
-      throw new Error("proposer is not defined");
-    }
-
-    if ((options.numOfChoices < 1) || (options.numOfChoices > 10)) {
-      throw new Error("numOfChoices must be between 1 and 10");
-    }
-
-    this.logContractFunctionCall("GenesisProtocol.propose", options);
-
-    const txResult = await this.wrapTransactionInvocation("GenesisProtocol.propose",
-      options,
-      () => {
-        return this.contract.propose(
-          options.numOfChoices,
-          Utils.NULL_HASH,
-          options.avatar,
-          options.executable,
-          options.proposer
-        );
-      });
-
-    return new ArcTransactionProposalResult(txResult.tx);
-  }
 
   /**
    * Stake some tokens on the final outcome matching this vote.
@@ -166,72 +113,6 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
     TransactionService.publishTxEvent(eventTopic, txReceiptEventPayload, tx);
 
     return new ArcTransactionResult(tx);
-  }
-
-  /**
-   * Vote on a proposal
-   * @param {VoteConfig} options
-   * @returns Promise<ArcTransactionResult>
-   */
-  public async vote(options: VoteConfig = {} as VoteConfig): Promise<ArcTransactionResult> {
-
-    const defaults = {
-      onBehalfOf: null,
-    };
-
-    options = Object.assign({}, defaults, options);
-
-    if (!options.proposalId) {
-      throw new Error("proposalId is not defined");
-    }
-
-    this._validateVote(options.vote, options.proposalId);
-
-    this.logContractFunctionCall("GenesisProtocol.vote", options);
-
-    return this.wrapTransactionInvocation("GenesisProtocol.vote",
-      options,
-      () => {
-        return this.contract.vote(
-          options.proposalId,
-          options.vote,
-          options.onBehalfOf ? { from: options.onBehalfOf } : undefined
-        );
-      });
-  }
-
-  /**
-   * Vote on a proposal, staking some reputation that the final outcome will match this vote.
-   * Reputation of 0 will stake all the voter's reputation.
-   * @param {VoteWithSpecifiedAmountsConfig} options
-   * @returns Promise<ArcTransactionResult>
-   */
-  public async voteWithSpecifiedAmounts(
-    options: VoteWithSpecifiedAmountsConfig = {} as VoteWithSpecifiedAmountsConfig)
-    : Promise<ArcTransactionResult> {
-
-    if (!options.proposalId) {
-      throw new Error("proposalId is not defined");
-    }
-
-    this._validateVote(options.vote, options.proposalId);
-
-    if (!options.reputation) {
-      throw new Error("reputation is not defined");
-    }
-
-    this.logContractFunctionCall("GenesisProtocol.voteWithSpecifiedAmounts", options);
-
-    return this.wrapTransactionInvocation("GenesisProtocol.voteWithSpecifiedAmounts",
-      options,
-      () => {
-        return this.contract.voteWithSpecifiedAmounts(
-          options.proposalId,
-          options.vote,
-          options.reputation,
-          0
-        );
-      });
   }
 
   /**
@@ -433,28 +314,6 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
   }
 
   /**
-   * Return the number of possible choices when voting for the proposal.
-   * @param {GetNumberOfChoicesConfig} options
-   * @returns Promise<number>
-   */
-  public async getNumberOfChoices(
-    options: GetNumberOfChoicesConfig = {} as GetNumberOfChoicesConfig)
-    : Promise<number> {
-
-    if (!options.proposalId) {
-      throw new Error("proposalId is not defined");
-    }
-
-    this.logContractFunctionCall("GenesisProtocol.getNumberOfChoices", options);
-
-    const numOfChoices = await this.contract.getNumberOfChoices(
-      options.proposalId
-    );
-
-    return numOfChoices.toNumber();
-  }
-
-  /**
    * Return the vote and the amount of reputation of the voter committed to this proposal
    * @param {GetVoterInfoResult} options
    * @returns Promise<GetVoterInfoResult>
@@ -507,24 +366,6 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
       options.proposalId,
       options.vote
     );
-  }
-
-  /**
-   * Return whether the proposal is in a votable state.
-   * @param {IsVotableConfig} options
-   * @returns Promise<boolean>
-   */
-  public async isVotable(
-    options: IsVotableConfig = {} as IsVotableConfig)
-    : Promise<boolean> {
-
-    if (!options.proposalId) {
-      throw new Error("proposalId is not defined");
-    }
-
-    this.logContractFunctionCall("GenesisProtocol.isVotable", options);
-
-    return this.contract.isVotable(options.proposalId);
   }
 
   /**
@@ -690,10 +531,9 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
    * EntityFetcherFactory for votable GenesisProtocolProposal.
    * @param avatarAddress
    */
-  public get VotableProposals():
+  public get VotableGenesisProtocolProposals():
     EntityFetcherFactory<GenesisProtocolProposal, NewProposalEventResult> {
 
-    const votingMachineService = new VotingMachineService(this.contract, this.address, this.web3EventService);
     const proposalService = new ProposalService(this.web3EventService);
 
     return proposalService.getProposalEvents({
@@ -702,8 +542,24 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
         return this.getProposal(args._proposalId);
       },
       votableOnly: true,
-      votingMachineService,
+      votingMachine: this,
     });
+  }
+
+  /**
+   * Cancel the given proposal
+   * @param options
+   */
+  public async cancelProposal(options: ProposalIdOption): Promise<ArcTransactionResult> {
+    throw new Error("GenesisProtocol does not support cancelProposal");
+  }
+
+  public async ownerVote(options: OwnerVoteOptions): Promise<ArcTransactionResult> {
+    throw new Error("GenesisProtocol does not support ownerVote");
+  }
+
+  public async cancelVote(options: ProposalIdOption): Promise<ArcTransactionResult> {
+    throw new Error("GenesisProtocol does not support cancelVote");
   }
 
   /**
@@ -875,13 +731,6 @@ export class GenesisProtocolWrapper extends ContractWrapperBase implements Schem
     this.Redeem = this.createEventFetcherFactory<RedeemEventResult>(this.contract.Redeem);
     this.RedeemReputation = this.createEventFetcherFactory<RedeemReputationEventResult>(this.contract.RedeemReputation);
     /* tslint:enable:max-line-length */
-  }
-
-  private async _validateVote(vote: number, proposalId: Hash): Promise<void> {
-    const numChoices = await this.getNumberOfChoices({ proposalId });
-    if (!Number.isInteger(vote) || (vote < 0) || (vote > numChoices)) {
-      throw new Error("vote is not valid");
-    }
   }
 
   private convertProposalPropsArrayToObject(proposalArray: Array<any>, proposalId: Hash): GenesisProtocolProposal {
@@ -1093,21 +942,6 @@ export interface StakeConfig {
   vote: number;
 }
 
-export interface VoteWithSpecifiedAmountsConfig {
-  /**
-   * unique hash of proposal index
-   */
-  proposalId: string;
-  /**
-   * the choice of vote. Can be 1 (YES) or 2 (NO).
-   */
-  vote: number;
-  /**
-   * reputation to put behind this vote, in Wei
-   */
-  reputation: BigNumber | string;
-}
-
 export interface RedeemConfig {
   /**
    * unique hash of proposal index
@@ -1210,26 +1044,12 @@ export interface GetRedeemableReputationStakerConfig {
   beneficiaryAddress: Address;
 }
 
-export interface GetNumberOfChoicesConfig {
-  /**
-   * unique hash of proposal index
-   */
-  proposalId: string;
-}
-
 export interface GetVoterInfoConfig {
   /**
    * unique hash of proposal index
    */
   proposalId: string;
   voter: string;
-}
-
-export interface IsVotableConfig {
-  /**
-   * unique hash of proposal index
-   */
-  proposalId: string;
 }
 
 export interface GetProposalStatusConfig {
@@ -1371,4 +1191,15 @@ export interface GenesisProtocolProposal {
   totalVotes: BigNumber;
   votersStakes: BigNumber;
   winningVote: number;
+}
+
+export interface GetVoteStatusConfig {
+  /**
+   * unique hash of proposal index
+   */
+  proposalId: string;
+  /**
+   * the choice of vote, like 1 (YES) or 2 (NO).
+   */
+  vote: number;
 }

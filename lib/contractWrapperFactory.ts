@@ -5,7 +5,8 @@ import { Web3EventService } from "./web3EventService";
 /**
  * Generic class factory for all of the contract wrapper classes.
  */
-export class ContractWrapperFactory<TWrapper extends ContractWrapperBase> {
+export class ContractWrapperFactory<TWrapper extends ContractWrapperBase>
+  implements IContractWrapperFactory<TWrapper> {
 
   private solidityContract: any;
 
@@ -55,4 +56,10 @@ export class ContractWrapperFactory<TWrapper extends ContractWrapperBase> {
       this.solidityContract = await Utils.requireContract(this.solidityContractName);
     }
   }
+}
+
+export interface IContractWrapperFactory<TWrapper extends ContractWrapperBase> {
+  new: (...rest: Array<any>) => Promise<TWrapper>;
+  at: (address: string) => Promise<TWrapper>;
+  deployed: () => Promise<TWrapper>;
 }

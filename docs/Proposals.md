@@ -26,4 +26,9 @@ Often we use schemes for working with proposals. Any scheme that works with prop
 [More on Proposals to Come]
 
 ### Voting Machines
-[More on Voting Machines to Come]
+
+Voting Machines play an integral part in promoting coherence and collaboration within and between DAOs in the DAOstack ecosystem.  Which voting machine you choose to use for your DAO or DAO scheme, and how you configure it, can profoundly affect emergent qualities of your organization.
+
+Currently Arc.js wraps two Arc voting machines: [AbsoluteVote](/api/classes/AbsoluteVote) and [GenesisProtocol](/api/classes/GenesisProtocol).  You can find more information about [Arc voting machines here](https://daostack.github.io/arc/contracts/VotingMachines/README/).
+
+While each of these voting machines have their own individual API, they both implement a common interface called 

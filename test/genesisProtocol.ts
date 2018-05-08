@@ -22,7 +22,7 @@ describe("GenesisProtocol", () => {
   const createProposal = async (): Promise<Hash> => {
 
     const result = await genesisProtocol.propose({
-      avatar: dao.avatar.address,
+      avatarAddress: dao.avatar.address,
       executable: executableTest.address,
       numOfChoices: 2,
     });
@@ -101,7 +101,7 @@ describe("GenesisProtocol", () => {
 
     const proposalId2 = await createProposal();
 
-    const proposals = await genesisProtocol.VotableProposals(
+    const proposals = await genesisProtocol.VotableGenesisProtocolProposals(
       { _avatar: dao.avatar.address },
       { fromBlock: 0 }).get();
 
@@ -203,12 +203,12 @@ describe("GenesisProtocol", () => {
       WrapperService.wrappers.GenesisProtocol.address,
       "voting machine address is not that of GenesisProtocol");
     assert.isFalse(await helpers.voteWasExecuted(votingMachine, result.proposalId), "Should not have been executed");
-    assert.isTrue(await votingMachine.isVotable(result.proposalId), "Should be votable");
+    assert.isTrue(await votingMachine.isVotable({ proposalId: result.proposalId }), "Should be votable");
 
-    await votingMachine.vote(BinaryVoteResult.Yes, result.proposalId, accounts[0]);
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId: result.proposalId, onBehalfOf: accounts[0] });
 
     assert.isTrue(await helpers.voteWasExecuted(votingMachine, result.proposalId), "vote was not executed");
-    assert.isFalse(await votingMachine.isVotable(result.proposalId), "Should not be votable");
+    assert.isFalse(await votingMachine.isVotable({ proposalId: result.proposalId }), "Should not be votable");
   });
 
   it("can call getScoreThresholdParams", async () => {
@@ -501,7 +501,7 @@ describe("GenesisProtocol", () => {
   it("cannot register new proposal with no params", async () => {
 
     try {
-      await genesisProtocol.propose();
+      await genesisProtocol.propose({} as any);
       assert(false, "Should have thrown validation exception");
     } catch (ex) {
       assert.equal(ex, "Error: avatar is not defined");
@@ -512,7 +512,7 @@ describe("GenesisProtocol", () => {
 
     try {
       await genesisProtocol.propose({
-        avatar: dao.avatar.address,
+        avatarAddress: dao.avatar.address,
         executable: executableTest.address,
         numOfChoices: 13,
       });

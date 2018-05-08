@@ -108,7 +108,7 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
+        votingMachine: await this.getVotingMachine(avatarAddress),
       });
   }
 
@@ -128,7 +128,7 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
+        votingMachine: await this.getVotingMachine(avatarAddress),
       });
   }
 

@@ -1,14 +1,12 @@
 "use strict";
-import { Address, Hash, VoteConfig } from "../commonTypes";
+import { Address, Hash } from "../commonTypes";
 
 import {
-  ArcTransactionDataResult,
-  ArcTransactionResult,
-  ContractWrapperBase
+  ArcTransactionDataResult
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalService, VotableProposal } from "../proposalService";
-import { VotingMachineService } from "../votingMachineService";
+import { VotingMachineBase } from "../votingMachineBase";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   NewProposalEventResult,
@@ -16,7 +14,7 @@ import {
   VotingMachineExecuteProposalEventResult
 } from "./commonEventInterfaces";
 
-export class AbsoluteVoteWrapper extends ContractWrapperBase {
+export class AbsoluteVoteWrapper extends VotingMachineBase {
 
   public name: string = "AbsoluteVote";
   public friendlyName: string = "Absolute Vote";
@@ -33,59 +31,28 @@ export class AbsoluteVoteWrapper extends ContractWrapperBase {
   public CancelVoting: EventFetcherFactory<CancelVotingEventResult>;
 
   /**
-   * Vote on a proposal
-   * @param {VoteConfig} options
-   * @returns Promise<ArcTransactionResult>
-   */
-  public async vote(options: VoteConfig = {} as VoteConfig): Promise<ArcTransactionResult> {
-
-    const defaults = {
-      onBehalfOf: null,
-    };
-
-    options = Object.assign({}, defaults, options) as VoteConfig;
-
-    if (!options.proposalId) {
-      throw new Error("proposalId is not defined");
-    }
-
-    if (!Number.isInteger(options.vote) || (options.vote < 0) || (options.vote > 2)) {
-      throw new Error("vote is not valid");
-    }
-
-    this.logContractFunctionCall("AbsoluteVote.vote", options);
-
-    return this.wrapTransactionInvocation("AbsoluteVote.vote",
-      options,
-      () => {
-        return this.contract.vote(
-          options.proposalId,
-          options.vote,
-          options.onBehalfOf ? { from: options.onBehalfOf } : undefined
-        );
-      });
-  }
-
-  /**
    * EntityFetcherFactory for votable proposals.
    * @param avatarAddress
    */
-  public get VotableProposals():
+  public get VotableAbsoluteVoteProposals():
     EntityFetcherFactory<VotableProposal, NewProposalEventResult> {
-
-    const votingMachineService = new VotingMachineService(
-      this.contract,
-      this.address,
-      this.web3EventService);
 
     const proposalService = new ProposalService(this.web3EventService);
 
-    /**
-     * TODO:  If we can't get events into IntVoteInterface, when we'll have to
-     * adapt AbsoluteVote.NewProposal.  (Note GenesisProtocol is already doing it
-     * that way.)
-     */
-    return proposalService.getVotableProposals(votingMachineService);
+    return proposalService.getProposalEvents({
+      proposalsEventFetcher: this.NewProposal,
+      transformEventCallback: async (args: NewProposalEventResult): Promise<VotableProposal> => {
+        return {
+          avatarAddress: args._avatar,
+          numOfChoices: args._numOfChoices.toNumber(),
+          paramsHash: args._paramsHash,
+          proposalId: args._proposalId,
+          proposerAddress: args._proposer,
+        };
+      },
+      votableOnly: true,
+      votingMachine: this,
+    });
   }
 
   public async setParameters(params: AbsoluteVoteParams): Promise<ArcTransactionDataResult<Hash>> {

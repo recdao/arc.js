@@ -1,5 +1,5 @@
 import { TransactionReceiptTruffle } from "./contractWrapperBase";
-import { IEventSubscription, PubSubEventService } from "./pubSubEventService";
+import { PubSubEventService } from "./pubSubEventService";
 
 /**
  * Enables you to track the completion of transactions triggered by Arc.js functions.
@@ -25,27 +25,42 @@ export class TransactionService extends PubSubEventService {
    * @param topic
    * @param options
    * @param txCount
-   * @param suppressKickOff
+   * @param resendTopics Whenever one of these topics is published, resend as `topic`
    */
   public static publishKickoffEvent(
     topic: string,
     options: any,
     txCount: number,
-    suppressKickOff: boolean = false): TransactionReceiptsEventInfo {
+    resendTopics?: Array<string> | string): TransactionReceiptsEventInfo {
+
+    const payload = TransactionService.createPayload(topic, options, txCount);
+    /**
+     * publish the "kick-off" event
+     */
+    TransactionService.publishTxEvent(topic, payload);
+
+    if (!Array.isArray(resendTopics)) {
+      resendTopics = [resendTopics];
+    }
+
+    payload.resendTopics = resendTopics;
+
+    return payload;
+  }
+
+  public static createPayload(
+    topic: string,
+    options: any,
+    txCount: number
+  ): TransactionReceiptsEventInfo {
 
     const payload = {
       invocationKey: TransactionService.generateInvocationKey(topic),
       options,
+      topic,
       tx: null,
       txCount,
     };
-
-    if (!suppressKickOff) {
-      /**
-       * publish the "kick-off" event
-       */
-      TransactionService.publishTxEvent(topic, payload);
-    }
 
     return payload;
   }
@@ -66,7 +81,15 @@ export class TransactionService extends PubSubEventService {
     if (tx) {
       payload = Object.assign({}, payload, { tx });
     }
-    return PubSubEventService.publish(topic, payload);
+    const result = PubSubEventService.publish(topic, payload);
+
+    /**
+     * if the given topic matches resendTopics, then resend as payload.topic
+     */
+    if (payload.resendTopics && PubSubEventService.isTopicSpecifiedBy(payload.resendTopics, topic, false)) {
+      PubSubEventService.publish(payload.topic, payload);
+    }
+    return result;
   }
 
   /**
@@ -76,17 +99,17 @@ export class TransactionService extends PubSubEventService {
    * @param superPayload payload to send
    * @returns An interface with `.unsubscribe()`.  Be sure to call it!
    */
-  public static resendTxEvents(
-    topics: Array<string> | string,
-    superTopic: string,
-    superPayload: TransactionReceiptsEventInfo): IEventSubscription {
+  // public static resendTxEvents(
+  //   topics: Array<string> | string,
+  //   superTopic: string,
+  //   superPayload: TransactionReceiptsEventInfo): IEventSubscription {
 
-    return PubSubEventService.subscribe(topics, (topic: string, txEventInfo: TransactionReceiptsEventInfo) => {
-      if (txEventInfo.tx) { // skip kick-off events
-        TransactionService.publishTxEvent(superTopic, superPayload, txEventInfo.tx);
-      }
-    });
-  }
+  //   return PubSubEventService.subscribe(topics, (topic: string, txEventInfo: TransactionReceiptsEventInfo) => {
+  //     if (txEventInfo.tx) { // skip kick-off events
+  //       TransactionService.publishTxEvent(superTopic, superPayload, txEventInfo.tx);
+  //     }
+  //   });
+  // }
 }
 
 /**
@@ -103,6 +126,14 @@ export interface TransactionReceiptsEventInfo {
    * This will have default values filled in.
    */
   options?: any;
+  /**
+   * Pub/Sub event topics to republish as `topic` with this payload
+   */
+  resendTopics?: Array<string> | string;
+  /**
+   * The topic to which we're publishing
+   */
+  topic: string;
   /**
    * The receipt for the transaction that has completed.  Note that the tx may not necessarily have
    * completed successfully in the case of errors or rejection.

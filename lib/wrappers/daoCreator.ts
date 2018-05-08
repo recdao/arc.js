@@ -146,16 +146,8 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
     const txReceiptEventPayload = TransactionService.publishKickoffEvent(
       eventTopic,
       options,
-      this.setSchemesTransactionsCount(options));
-
-    /**
-     * subscribe to all votingMachine setParameter and scheme "txReceipts" and
-     * republish as eventTopic with txReceiptEventPayload
-     */
-    const eventsSubscription = TransactionService.resendTxEvents(
-      ["txReceipts.ContractWrapperBase.setParameters"],
-      eventTopic,
-      txReceiptEventPayload);
+      this.setSchemesTransactionsCount(options),
+      ["txReceipts.ContractWrapperBase", "txReceipts.VotingMachineBase"]);
 
     let tx;
 
@@ -282,8 +274,6 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
       );
 
     } finally {
-
-      eventsSubscription.unsubscribe();
 
       if (tx) {
         TransactionService.publishTxEvent(eventTopic, txReceiptEventPayload, tx);

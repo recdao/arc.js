@@ -80,17 +80,6 @@ export interface SchemeWrapper {
   getSchemePermissions(avatarAddress: Address): Promise<SchemePermissions>;
 }
 
-export interface GetVoteStatusConfig {
-  /**
-   * unique hash of proposal index
-   */
-  proposalId: string;
-  /**
-   * the choice of vote, like 1 (YES) or 2 (NO).
-   */
-  vote: number;
-}
-
 export interface HasContract {
   contract: any;
 }

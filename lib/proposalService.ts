@@ -1,7 +1,6 @@
 import { BigNumber } from "bignumber.js";
 import { Address, Hash } from "./commonTypes";
-import { ProposalVotingMachineService, ProposalVotingMachineServiceFactory } from "./proposalVotingMachineService";
-import { VotingMachineService } from "./votingMachineService";
+import { VotingMachineBase } from "./votingMachineBase";
 import {
   EntityFetcherFactory,
   EventFetcherFactory,
@@ -27,8 +26,8 @@ export class ProposalService {
    * Returns an EntityFetcherFactory for fetching proposal-related events.  Can take any EventFetcherFactory
    * whose event args supply `_proposalId`.  Returns events as a promise of `TProposal`.  You must supply an
    * `EventFetcherFactory` for fetching the events and a callback to transform `TEventArgs` to a promise of `TProposal`.
-   * Each entity, when the associated proposal is votable and options.votingMachineService is supplied,
-   * will also contain a `votingMachineService` property of type `ProposalVotingMachineService`.
+   * Each entity, when the associated proposal is votable and options.votingMachine is supplied,
+   * will also contain a `votingMachine` property of type `VotingMachineBase`.
    * @type TEventArgs The type of the `args` object in the event.
    * @type TProposal The type of object returned as a transformation of the `args` information in each event.
    * @param options
@@ -47,8 +46,8 @@ export class ProposalService {
 
     const votableOnly = !!options.votableOnly;
 
-    if (votableOnly && !options.votingMachineService) {
-      throw new Error("votingMachineService must be supplied when votableOnly is true");
+    if (votableOnly && !options.votingMachine) {
+      throw new Error("votingMachine must be supplied when votableOnly is true");
     }
 
     return this.web3EventService.createEntityFetcherFactory<TProposal, TEventArgs>(
@@ -56,8 +55,8 @@ export class ProposalService {
       async (args: TEventArgs): Promise<TProposal | (TProposal & ProposalEntity) | undefined> => {
         let entity: TProposal | (TProposal & ProposalEntity) | undefined;
 
-        if (options.votingMachineService) {
-          const isVotable = await options.votingMachineService.isVotable(args._proposalId);
+        if (options.votingMachine) {
+          const isVotable = await options.votingMachine.isVotable({ proposalId: args._proposalId });
 
           entity = await (
             ((!votableOnly || isVotable) ?
@@ -65,9 +64,7 @@ export class ProposalService {
               Promise.resolve(undefined)));
 
           if (entity && isVotable) {
-            const factory = new ProposalVotingMachineServiceFactory(this.web3EventService);
-            const votingService = await factory.fromVotingMachine(options.votingMachineService, args._proposalId);
-            (entity as (TProposal & ProposalEntity)).votingMachineService = votingService;
+            (entity as (TProposal & ProposalEntity)).votingMachine = options.votingMachine;
           }
         } else {
           entity = await options.transformEventCallback(args);
@@ -79,16 +76,16 @@ export class ProposalService {
 
   /**
    * Returns promise of an EntityFetcherFactory for fetching votable proposals from the
-   * given `VotingMachineService`. The proposals are returned as promises of instances
+   * given `VotingMachineBase`. The proposals are returned as promises of instances
    * of `VotableProposal`.
    *
    * @param votingMachineAddress
    */
-  public getVotableProposals(votingMachineService: VotingMachineService):
+  public getVotableProposals(votingMachine: VotingMachineBase):
     EntityFetcherFactory<VotableProposal, NewProposalEventResult> {
 
     return this.web3EventService.createEntityFetcherFactory<VotableProposal, NewProposalEventResult>(
-      votingMachineService.VotableProposals,
+      votingMachine.VotableProposals,
       (args: NewProposalEventResult): Promise<VotableProposal> => {
         return Promise.resolve(
           {
@@ -104,16 +101,16 @@ export class ProposalService {
 
   /**
    * Returns promise of an EntityFetcherFactory for fetching executed proposals from the
-   * given `VotingMachineService`.
+   * given `VotingMachineBase`.
    * The proposals are returned as promises of instances of `ExecutedProposal`.
    *
    * @param votingMachineAddress
    */
-  public getExecutedProposals(votingMachineService: VotingMachineService):
+  public getExecutedProposals(votingMachine: VotingMachineBase):
     EntityFetcherFactory<ExecutedProposal, VotingMachineExecuteProposalEventResult> {
 
     return this.web3EventService.createEntityFetcherFactory<ExecutedProposal, VotingMachineExecuteProposalEventResult>(
-      votingMachineService.ExecuteProposal,
+      votingMachine.ExecuteProposal,
       (args: VotingMachineExecuteProposalEventResult): Promise<ExecutedProposal> => {
         return Promise.resolve(
           {
@@ -174,12 +171,12 @@ export interface GetProposalEventsOptions<TProposal, TEventArgs extends EventHas
    */
   votableOnly?: boolean;
   /**
-   * Used to determine whether proposals are votable, and then to create a `ProposalVotingMachineService`.
+   * Used to determine whether proposals are votable.
    * This is only required when votableOnly is set to `true`.
    */
-  votingMachineService?: VotingMachineService;
+  votingMachine?: VotingMachineBase;
 }
 
 export interface ProposalEntity {
-  votingMachineService: ProposalVotingMachineService;
+  votingMachine: VotingMachineBase;
 }

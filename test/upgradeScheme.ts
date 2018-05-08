@@ -38,7 +38,7 @@ describe("UpgradeScheme", () => {
 
     await newUpgradeScheme.setParameters(schemeParams);
 
-    const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
+    const votingMachine = await upgradeScheme.getVotingMachine(dao.avatar.address);
 
     const result = await upgradeScheme.proposeUpgradingScheme({
       avatar: dao.avatar.address,
@@ -48,7 +48,7 @@ describe("UpgradeScheme", () => {
 
     const proposalId = result.proposalId;
 
-    await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId, onBehalfOf: accounts[1] });
 
     /**
      * at this point upgradeScheme is no longer registered with the controller.
@@ -78,7 +78,7 @@ describe("UpgradeScheme", () => {
       "original scheme is not registered into the controller"
     );
 
-    const votingMachine = await upgradeScheme.getVotingMachineService(dao.avatar.address);
+    const votingMachine = await upgradeScheme.getVotingMachine(dao.avatar.address);
 
     const result = await upgradeScheme.proposeUpgradingScheme({
       avatar: dao.avatar.address,
@@ -98,7 +98,7 @@ describe("UpgradeScheme", () => {
     const proposal = proposals[0];
     assert.equal(proposal.proposalId, proposalId);
 
-    await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId, onBehalfOf: accounts[1] });
 
     const executedProposals = await upgradeScheme.getExecutedProposals(dao.avatar.address)(
       { _proposalId: proposalId }, { fromBlock: 0 }).get();

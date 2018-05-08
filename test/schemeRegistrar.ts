@@ -21,7 +21,7 @@ describe("SchemeRegistrar", () => {
     // schemeRegistrar can't remove a scheme with greater permissions that it has
     const removedScheme = schemeRegistrar;
 
-    const votingMachine = await schemeRegistrar.getVotingMachineService(dao.avatar.address);
+    const votingMachine = await schemeRegistrar.getVotingMachine(dao.avatar.address);
 
     const result = await schemeRegistrar.proposeToRemoveScheme({
       avatar: dao.avatar.address,
@@ -30,7 +30,7 @@ describe("SchemeRegistrar", () => {
 
     const proposalId = result.proposalId;
 
-    await votingMachine.vote(BinaryVoteResult.Yes, proposalId, accounts[1]);
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId, onBehalfOf: accounts[1] });
 
     /**
      * at this point schemeRegistrar is no longer registered with the controller.
@@ -236,9 +236,9 @@ describe("SchemeRegistrar", () => {
     assert(proposalsRemove[0].proposalId === proposalToRemoveId, "proposalToRemoveId not found");
     assert.equal(proposalsRemove[0].proposalType, SchemeRegistrarProposalType.Remove);
 
-    const votingMachine = await schemeRegistrar.getVotingMachineService(dao.avatar.address);
+    const votingMachine = await schemeRegistrar.getVotingMachine(dao.avatar.address);
 
-    await votingMachine.vote(BinaryVoteResult.Yes, proposalToRemoveId, accounts[1]);
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId: proposalToRemoveId, onBehalfOf: accounts[1] });
 
     const proposals = await schemeRegistrar.getExecutedProposals(dao.avatar.address)(
       { _proposalId: proposalToRemoveId }, { fromBlock: 0 }).get();

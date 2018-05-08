@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { BinaryVoteResult, VotingMachineService } from "../lib";
+import { BinaryVoteResult, VotingMachineBase } from "../lib";
 import { ArcTransactionProposalResult, DecodedLogEntryEvent } from "../lib/contractWrapperBase";
 import { DAO } from "../lib/dao";
 import { AbsoluteVoteWrapper } from "../lib/wrappers/absoluteVote";
@@ -15,7 +15,7 @@ import * as helpers from "./helpers";
 describe("ContributionReward scheme", () => {
   let dao: DAO;
   let scheme: ContributionRewardWrapper;
-  let votingMachine: VotingMachineService;
+  let votingMachine: VotingMachineBase;
 
   beforeEach(async () => {
 
@@ -30,7 +30,7 @@ describe("ContributionReward scheme", () => {
       "ContributionReward",
       ContributionRewardFactory) as ContributionRewardWrapper;
 
-    votingMachine = await scheme.getVotingMachineService(dao.avatar.address);
+    votingMachine = await scheme.getVotingMachine(dao.avatar.address);
   });
 
   const proposeReward = (rewardsSpec: any): Promise<ArcTransactionProposalResult> => {
@@ -243,8 +243,8 @@ describe("ContributionReward scheme", () => {
     assert.equal(proposal.beneficiaryAddress, accounts[1],
       "beneficiaryAddress not set properly on proposal");
 
-    await votingMachine.vote(BinaryVoteResult.Yes, proposalId2, accounts[0]);
-    await votingMachine.vote(BinaryVoteResult.Yes, proposalId2, accounts[1]);
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId: proposalId2, onBehalfOf: accounts[0] });
+    await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId: proposalId2, onBehalfOf: accounts[1] });
 
     proposals = await scheme.getExecutedProposals(dao.avatar.address)(
       { _proposalId: proposalId2 }, { fromBlock: 0 }).get();
@@ -285,8 +285,16 @@ describe("ContributionReward scheme", () => {
     assert(proposals.filter((p: ContributionProposal) => p.proposalId === reputationChangeProposalId).length,
       "reputationChangeProposalId not found");
 
-    await votingMachine.vote(BinaryVoteResult.Yes, nativeRewardProposalId, accounts[1]);
-    await votingMachine.vote(BinaryVoteResult.Yes, reputationChangeProposalId, accounts[1]);
+    await votingMachine.vote({
+      onBehalfOf: accounts[1],
+      proposalId: nativeRewardProposalId,
+      vote: BinaryVoteResult.Yes,
+    });
+    await votingMachine.vote({
+      onBehalfOf: accounts[1],
+      proposalId: reputationChangeProposalId,
+      vote: BinaryVoteResult.Yes,
+    });
 
     let rewards = await scheme.getBeneficiaryRewards({
       avatar: dao.avatar.address,

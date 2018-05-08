@@ -5,7 +5,7 @@ import { IEventSubscription, PubSubEventService } from "./pubSubEventService";
 /**
  * Support for working with events that originate from Arc contracts
  * and are served up by Web3.
- * 
+ *
  * See [Arc Web3 Events in Arc.js](/Events#web3events).
  */
 export class Web3EventService {
@@ -13,13 +13,13 @@ export class Web3EventService {
    * Returns a function that creates an EventFetcher<TEventArgs>.
    * For subclasses to use to create their event handlers.
    * This is identical to what you get with Truffle, except with enhancements.
-   * 
+   *
    * Note that the callback parameter of `EventFetcher.get` is optional; you
    * may alternatively obtain the promise of a `Array<TEventArgs>` from the return value
    * of `get`.
    *
    * See [Arc Web3 Events in Arc.js](/Events#web3events).
-   * 
+   *
    * @param baseEvent - the event from the Truffle contract.
    * @param preProcessEvent - optionally supply this to modify the err and log arguments before they are
    * passed to the `get`/`watch` callback.
@@ -76,11 +76,11 @@ export class Web3EventService {
           return new Promise<Array<DecodedLogEntryEvent<TEventArgs>>>(
             (resolve: (
               result: Array<DecodedLogEntryEvent<TEventArgs>>) => void,
-              reject: (error: Error) => void): void => {
+             reject: (error: Error) => void): void => {
 
               baseFetcher.get(
                 (error: Error,
-                  log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
+                 log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>): void => {
                   if (error) {
                     return reject(error);
                   }
@@ -121,13 +121,13 @@ export class Web3EventService {
    * `EntityFetcherFactory<TEntity, TEventArgs>`.  So whenever a web3 event
    * is received by the given `EventFetcherFactory`, we transform the `TEventArgs`
    * into `TEntities`.
-   * 
+   *
    * Note that the callback parameter of `EntityFetcher.get` is optional; you
    * may alternatively obtain the promise of a `Array<TEntity>` from the return value
    * of `get`.
-   * 
+   *
    * See [Arc Web3 Events in Arc.js](/Events#web3events).
-   * 
+   *
    * @param eventFetcherFactory
    * @param transformEventCallback Function to convert an instance of TEventArgs into
    * the promise of an instance of TEntity.  If it returns `undefined` then no entity
@@ -159,13 +159,13 @@ export class Web3EventService {
       // handler that takes the events and issues givenCallback appropriately
       const handleEvent =
         (error: Error,
-          log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>,
-          singly: boolean,
+         log: DecodedLogEntryEvent<TEventArgs> | Array<DecodedLogEntryEvent<TEventArgs>>,
+         singly: boolean,
           /*
            * invoke this callback on every event (watch)
            * or on the array of events (get), depending on the value of singly
            */
-          callback?: (error: Error, args: TEntity | Promise<Array<TEntity>>) => void):
+         callback?: (error: Error, args: TEntity | Promise<Array<TEntity>>) => void):
           Promise<Array<TEntity>> => {
 
           const promiseOfEntities: Promise<Array<TEntity>> =

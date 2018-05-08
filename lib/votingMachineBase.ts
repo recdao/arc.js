@@ -1,6 +1,14 @@
 import { BigNumber } from "bignumber.js";
+import { NULL_ADDRESS, NULL_HASH } from "../test/helpers";
 import { Address, Hash } from "./commonTypes";
-import { ArcTransactionResult, DecodedLogEntryEvent, TransactionReceiptTruffle, ContractWrapperBase } from "./contractWrapperBase";
+import {
+  ArcTransactionProposalResult,
+  ArcTransactionResult,
+  ContractWrapperBase,
+  DecodedLogEntryEvent,
+  TransactionReceiptTruffle
+} from "./contractWrapperBase";
+import { ContractWrapperFactory, IContractWrapperFactory } from "./contractWrapperFactory";
 import { EventFetcherFactory, Web3EventFetcher, Web3EventService } from "./web3EventService";
 import { CancelProposalEventResult, CancelVotingEventResult } from "./wrappers/absoluteVote";
 import {
@@ -8,7 +16,6 @@ import {
   VoteProposalEventResult,
   VotingMachineExecuteProposalEventResult
 } from "./wrappers/commonEventInterfaces";
-import { ContractWrapperFactory, IContractWrapperFactory } from "./contractWrapperFactory";
 
 // /**
 //  * Instantiate a VotingMachineBase given the address of any Arc contract
@@ -88,7 +95,7 @@ export class VotingMachineBase extends ContractWrapperBase {
    * incremented counter and the address of the voting machine.
    * @param options
    */
-  public async propose(options: ProposeOptions): Promise<ArcTransactionResult> {
+  public async propose(options: ProposeOptions): Promise<ArcTransactionProposalResult> {
 
     if (!options.avatarAddress) {
       throw new Error(`avatar is not defined`);
@@ -106,9 +113,17 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`numOfChoices must be greater than 0`);
     }
 
+    if (!options.proposalParameters) {
+      options.proposalParameters = NULL_HASH;
+    }
+
+    if (!options.proposerAddress) {
+      options.proposerAddress = NULL_ADDRESS;
+    }
+
     this.logContractFunctionCall("VotingMachineBase.propose", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.propose",
+    const tx = await this.wrapTransactionInvocation("VotingMachineBase.propose",
       options,
       () => {
         return this.contract.propose(
@@ -118,6 +133,7 @@ export class VotingMachineBase extends ContractWrapperBase {
           options.executable,
           options.proposerAddress);
       });
+    return new ArcTransactionProposalResult(tx.tx);
   }
 
   /**
@@ -159,7 +175,7 @@ export class VotingMachineBase extends ContractWrapperBase {
         return this.contract.ownerVote(
           options.proposalId,
           options.vote,
-          options.voterAddress)
+          options.voterAddress);
       });
   }
 
@@ -181,7 +197,7 @@ export class VotingMachineBase extends ContractWrapperBase {
         return this.contract.vote(
           options.proposalId,
           options.vote,
-          options.onBehalfOf ? { from: options.onBehalfOf } : undefined)
+          options.onBehalfOf ? { from: options.onBehalfOf } : undefined);
       });
   }
 
@@ -207,7 +223,7 @@ export class VotingMachineBase extends ContractWrapperBase {
         return this.contract.voteWithSpecifiedAmounts(
           options.proposalId,
           options.vote,
-          options.reputation, new BigNumber(0))
+          options.reputation, new BigNumber(0));
       });
   }
 
@@ -225,7 +241,7 @@ export class VotingMachineBase extends ContractWrapperBase {
     return this.wrapTransactionInvocation("VotingMachineBase.cancelVote",
       options,
       () => {
-        return this.contract.cancelVote(options.proposalId)
+        return this.contract.cancelVote(options.proposalId);
       });
   }
 
@@ -299,7 +315,7 @@ export class VotingMachineBase extends ContractWrapperBase {
     return this.wrapTransactionInvocation("VotingMachineBase.execute",
       options,
       () => {
-        return this.contract.execute(options.proposalId)
+        return this.contract.execute(options.proposalId);
       });
   }
 
@@ -334,11 +350,12 @@ export class VotingMachineBase extends ContractWrapperBase {
 
   protected hydrated(): void {
     /* tslint:disable:max-line-length */
-    this.NewProposal = this.web3EventService.createEventFetcherFactory<NewProposalEventResult>(this.contract.NewProposal);
-    this.CancelProposal = this.web3EventService.createEventFetcherFactory<CancelProposalEventResult>(this.contract.CancelProposal);
-    this.ExecuteProposal = this.web3EventService.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>(this.contract.ExecuteProposal);
-    this.VoteProposal = this.web3EventService.createEventFetcherFactory<VoteProposalEventResult>(this.contract.VoteProposal);
-    this.CancelVoting = this.web3EventService.createEventFetcherFactory<CancelVotingEventResult>(this.contract.CancelVoting);
+    // TODO:  get Arc to implement these in IntVoteInterface
+    // this.NewProposal = this.web3EventService.createEventFetcherFactory<NewProposalEventResult>(this.contract.NewProposal);
+    // this.CancelProposal = this.web3EventService.createEventFetcherFactory<CancelProposalEventResult>(this.contract.CancelProposal);
+    // this.ExecuteProposal = this.web3EventService.createEventFetcherFactory<VotingMachineExecuteProposalEventResult>(this.contract.ExecuteProposal);
+    // this.VoteProposal = this.web3EventService.createEventFetcherFactory<VoteProposalEventResult>(this.contract.VoteProposal);
+    // this.CancelVoting = this.web3EventService.createEventFetcherFactory<CancelVotingEventResult>(this.contract.CancelVoting);
     /* tslint:enable:max-line-length */
   }
 
@@ -354,7 +371,8 @@ export class VotingMachineBase extends ContractWrapperBase {
   }
 }
 
-export const VotingMachineFactory = new ContractWrapperFactory("IntVoteInterface", VotingMachineBase, new Web3EventService());
+export const VotingMachineFactory =
+  new ContractWrapperFactory("IntVoteInterface", VotingMachineBase, new Web3EventService());
 
 /**
  * The Arc contract `IntVoteInterface`.
@@ -367,9 +385,9 @@ export interface IntVoteInterface {
   CancelVoting: Web3EventFetcher;
 
   propose(numOfChoices: number,
-    proposalParameters: Hash,
-    avatar: Address,
-    execute: Address): Promise<TransactionReceiptTruffle>;
+          proposalParameters: Hash,
+          avatar: Address,
+          execute: Address): Promise<TransactionReceiptTruffle>;
   cancelProposal(proposalId: Hash): Promise<TransactionReceiptTruffle>;
   ownerVote(proposalId: Hash, vote: number, voter: Address): Promise<TransactionReceiptTruffle>;
   // options is not part of Arc, rather is part of truffle. Declared here for onBehalfOf
@@ -409,7 +427,7 @@ export interface VoteOptions extends ProposalIdOption {
 }
 
 export interface VoteWithSpecifiedAmountsOptions extends ProposalIdOption {
-  reputation: BigNumber;
+  reputation: BigNumber | string;
   vote: number;
 }
 

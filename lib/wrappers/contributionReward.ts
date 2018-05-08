@@ -327,7 +327,7 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
             return this.getVotableProposal(args._avatar, args._proposalId);
           },
         votableOnly: true,
-        votingMachineService: await this.getVotingMachineService(avatarAddress),
+        votingMachine: await this.getVotingMachine(avatarAddress),
       });
   }
 

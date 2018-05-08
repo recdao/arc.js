@@ -1,7 +1,7 @@
 import { TransactionReceipt } from "web3";
 import { AvatarService } from "./avatarService";
 import { Address, HasContract, Hash, SchemePermissions } from "./commonTypes";
-import { ContractWrapperFactory } from "./contractWrapperFactory";
+import { IContractWrapperFactory } from "./contractWrapperFactory";
 import { LoggingService } from "./loggingService";
 import { TransactionService } from "./transactionService";
 import { Utils } from "./utils";
@@ -30,7 +30,7 @@ export abstract class ContractWrapperBase implements HasContract {
   /**
    * The wrapper factor class providing static methods `at(someAddress)`, `new()` and `deployed()`.
    */
-  public abstract factory: ContractWrapperFactory<any>;
+  public abstract factory: IContractWrapperFactory<any>;
   /**
    * The name of the contract.
    */

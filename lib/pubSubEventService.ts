@@ -50,6 +50,55 @@ export class PubSubEventService {
   }
 
   /**
+   * Return whether topic2 is specified by topics1.
+   *
+   * Examples:
+   *
+   * topic11: ["foo"]
+   * topic2: "foo.bar"
+   * result: true
+   *
+   * topics1: ["foo.bar"]
+   * topic2: "foo"
+   * result: false
+   *
+   * Or a wildcard:
+   *
+   * topics1: "*"
+   * topic2: "foo"
+   * result: true
+   *
+   * @param topics1
+   * @param topic2
+   * @param countEqualAsSpecifiedBy Optional, true to count equal topics as specified-by.  Default is true.
+   */
+  public static isTopicSpecifiedBy(
+    topics1: Array<string> | string,
+    topic2: string,
+    countEqualAsSpecifiedBy: boolean = true): boolean {
+
+    if (!topic2) { return false; }
+    if (!topics1) { return false; }
+
+    topics1 = ensureArray(topics1);
+
+    if (topics1[0] === "*") { return true; }
+
+    for (const topic1 of topics1) {
+
+      if (!topic1) { continue; }
+      if (topic1 === topic2) { return true; }
+      if (topic1.length > topic2.length) { continue; }
+      if (topic2.indexOf(topic1) !== 0) { continue; }
+      if (topic2[topic1.length] !== ".") { continue; }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Subscribe to multiple topics with the single given callback.
    * @param topics topic or collection of topics
    * @param callback Callback to handle them all
@@ -61,6 +110,13 @@ export class PubSubEventService {
 
     return new SubscriptionCollection(topics, callback);
   }
+}
+
+function ensureArray<T>(arr: Array<T> | T): Array<T> {
+  if (!Array.isArray(arr)) {
+    arr = [arr];
+  }
+  return arr;
 }
 
 /**
@@ -88,7 +144,7 @@ export class SubscriptionCollection implements IEventSubscription {
    */
   public subscribe(topics: string | Array<string>, callback: EventSubscriptionCallback): void {
 
-    if (!Array.isArray(topics)) { topics = [topics]; }
+    topics = ensureArray(topics);
 
     topics.forEach((topic: string) => {
       const subscriptionKey = PubSub.subscribe(topic, callback);
