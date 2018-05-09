@@ -19,7 +19,8 @@ import {
 
 /**
  * Provides the services of any voting machine that implements the `IntVoteInterface`
- * Arc contract interface.
+ * Arc contract interface.  Also serves as the base class for all the specific 
+ * voting machine contract wrapper classes.
  */
 export class IntVoteInterfaceWrapper extends ContractWrapperBase {
 
@@ -364,9 +365,9 @@ export interface IntVoteInterface {
   CancelVoting: Web3EventFetcher;
 
   propose(numOfChoices: number,
-          proposalParameters: Hash,
-          avatar: Address,
-          execute: Address): Promise<TransactionReceiptTruffle>;
+    proposalParameters: Hash,
+    avatar: Address,
+    execute: Address): Promise<TransactionReceiptTruffle>;
   cancelProposal(proposalId: Hash): Promise<TransactionReceiptTruffle>;
   ownerVote(proposalId: Hash, vote: number, voter: Address): Promise<TransactionReceiptTruffle>;
   // options is not part of Arc, rather is part of truffle. Declared here for onBehalfOf
