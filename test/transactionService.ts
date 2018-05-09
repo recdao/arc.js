@@ -36,6 +36,6 @@ describe("TransactionService", () => {
       subscription.unsubscribe();
     }
 
-    assert.equal(txCount, 6);
+    assert.equal(txCount, 7);
   });
 });

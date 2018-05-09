@@ -1,5 +1,7 @@
 import { TransactionReceiptTruffle } from "./contractWrapperBase";
+import { LoggingService } from "./loggingService";
 import { PubSubEventService } from "./pubSubEventService";
+import { Utils } from "./utils";
 
 /**
  * Enables you to track the completion of transactions triggered by Arc.js functions.
@@ -25,42 +27,17 @@ export class TransactionService extends PubSubEventService {
    * @param topic
    * @param options
    * @param txCount
-   * @param resendTopics Whenever one of these topics is published, resend as `topic`
    */
   public static publishKickoffEvent(
     topic: string,
     options: any,
-    txCount: number,
-    resendTopics?: Array<string> | string): TransactionReceiptsEventInfo {
+    txCount: number): TransactionReceiptsEventInfo {
 
     const payload = TransactionService.createPayload(topic, options, txCount);
     /**
      * publish the "kick-off" event
      */
     TransactionService.publishTxEvent(topic, payload);
-
-    if (!Array.isArray(resendTopics)) {
-      resendTopics = [resendTopics];
-    }
-
-    payload.resendTopics = resendTopics;
-
-    return payload;
-  }
-
-  public static createPayload(
-    topic: string,
-    options: any,
-    txCount: number
-  ): TransactionReceiptsEventInfo {
-
-    const payload = {
-      invocationKey: TransactionService.generateInvocationKey(topic),
-      options,
-      topic,
-      tx: null,
-      txCount,
-    };
 
     return payload;
   }
@@ -84,32 +61,70 @@ export class TransactionService extends PubSubEventService {
     const result = PubSubEventService.publish(topic, payload);
 
     /**
-     * if the given topic matches resendTopics, then resend as payload.topic
+     * Trigger the context topic as appropriate in every context on the stack.  Note recursion, as each
+     * triggered topic must itself be checked for further triggering.
      */
-    if (payload.resendTopics && PubSubEventService.isTopicSpecifiedBy(payload.resendTopics, topic, false)) {
-      PubSubEventService.publish(payload.topic, payload);
-    }
+    if (tx) {
+      for (let i = TransactionService.contextStack.length - 1; i >= 0; --i) {
+        const currentContext = TransactionService.contextStack[i];
+        if (PubSubEventService.isTopicSpecifiedBy(currentContext.topicTriggerFilter, topic, false)) {
+          payload = Object.assign({}, currentContext.payload, { tx });
+          TransactionService.publishTxEvent(currentContext.payload.topic, payload, tx);
+        }
+      }
+    } // don't resend kick-off events
+
     return result;
   }
 
   /**
-   * Subscribe to all given topics and resend as the given supertopic with superPayload.
-   * @param topics topics or topic
-   * @param superTopic topic to resend as
-   * @param superPayload payload to send
-   * @returns An interface with `.unsubscribe()`.  Be sure to call it!
+   * Push an event triggering context.  The presence of this context sets a scope within which events matching the
+   * filter will trigger the event topic given in the payload.  Contexts may be nested within one another.  Thus
+   * topic A may trigger topic B which may trigger topic C.  Thus the contexts are represented as a stack.
+   * @param topicTriggerFilter topic(s) that should be trigger the publishing of the topic given in the payload.
+   * @param payload The topic payload for the triggered topic.  The payload contains the topic string itself.
    */
-  // public static resendTxEvents(
-  //   topics: Array<string> | string,
-  //   superTopic: string,
-  //   superPayload: TransactionReceiptsEventInfo): IEventSubscription {
+  public static pushContext(
+    topicTriggerFilter: Array<string> | string,
+    payload: TransactionReceiptsEventInfo): EventContext {
 
-  //   return PubSubEventService.subscribe(topics, (topic: string, txEventInfo: TransactionReceiptsEventInfo) => {
-  //     if (txEventInfo.tx) { // skip kick-off events
-  //       TransactionService.publishTxEvent(superTopic, superPayload, txEventInfo.tx);
-  //     }
-  //   });
-  // }
+    const eventContext = {
+      payload,
+      topicTriggerFilter: Utils.ensureArray(topicTriggerFilter),
+    };
+    TransactionService.contextStack.push(eventContext);
+    return eventContext;
+  }
+
+  /**
+   * Pop the current context off the stack.  Logs a warning when the stack is already empty.
+   */
+  public static popContext(): void {
+    if (TransactionService.contextStack.length === 0) {
+      LoggingService.warn(`popContext: TransactionService.eventContext is already empty`);
+    }
+    // give queued events a chance to go out before popping the context
+    setTimeout(TransactionService.contextStack.pop, 0);
+  }
+
+  private static contextStack: Array<EventContext> = new Array<EventContext>();
+
+  private static createPayload(
+    topic: string,
+    options: any,
+    txCount: number
+  ): TransactionReceiptsEventInfo {
+
+    const payload = {
+      invocationKey: TransactionService.generateInvocationKey(topic),
+      options,
+      topic,
+      tx: null,
+      txCount,
+    };
+
+    return payload;
+  }
 }
 
 /**
@@ -127,10 +142,6 @@ export interface TransactionReceiptsEventInfo {
    */
   options?: any;
   /**
-   * Pub/Sub event topics to republish as `topic` with this payload
-   */
-  resendTopics?: Array<string> | string;
-  /**
    * The topic to which we're publishing
    */
   topic: string;
@@ -147,4 +158,9 @@ export interface TransactionReceiptsEventInfo {
    * The total expected number of transactions.
    */
   txCount: number;
+}
+
+export interface EventContext {
+  payload: TransactionReceiptsEventInfo;
+  topicTriggerFilter: Array<string>;
 }

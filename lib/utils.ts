@@ -252,6 +252,13 @@ export class Utils {
     return `0x${("00000000" + (permissions as number).toString(16)).substr(-8)}`;
   }
 
+  public static ensureArray<T>(arr: Array<T> | T): Array<T> {
+    if (!Array.isArray(arr)) {
+      arr = [arr];
+    }
+    return arr;
+  }
+
   private static web3: Web3 = undefined;
   private static alreadyTriedAndFailed: boolean = false;
 }

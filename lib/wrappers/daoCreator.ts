@@ -146,8 +146,15 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
     const txReceiptEventPayload = TransactionService.publishKickoffEvent(
       eventTopic,
       options,
-      this.setSchemesTransactionsCount(options),
-      ["txReceipts.ContractWrapperBase", "txReceipts.VotingMachineBase"]);
+      this.setSchemesTransactionsCount(options)
+    );
+
+    /**
+     * resend sub-events as txReceipts.DaoCreator.setSchemes
+     */
+    TransactionService.pushContext(
+      ["txReceipts.ContractWrapperBase", "txReceipts.VotingMachineBase"],
+      txReceiptEventPayload);
 
     let tx;
 
@@ -278,6 +285,8 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
       if (tx) {
         TransactionService.publishTxEvent(eventTopic, txReceiptEventPayload, tx);
       }
+
+      TransactionService.popContext();
     }
 
     return new ArcTransactionResult(tx);

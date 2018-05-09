@@ -1,5 +1,4 @@
 import { BigNumber } from "bignumber.js";
-import { NULL_ADDRESS, NULL_HASH } from "../test/helpers";
 import { Address, Hash } from "./commonTypes";
 import {
   ArcTransactionProposalResult,
@@ -9,6 +8,7 @@ import {
   TransactionReceiptTruffle
 } from "./contractWrapperBase";
 import { ContractWrapperFactory, IContractWrapperFactory } from "./contractWrapperFactory";
+import { Utils } from "./utils";
 import { EventFetcherFactory, Web3EventFetcher, Web3EventService } from "./web3EventService";
 import { CancelProposalEventResult, CancelVotingEventResult } from "./wrappers/absoluteVote";
 import {
@@ -16,30 +16,6 @@ import {
   VoteProposalEventResult,
   VotingMachineExecuteProposalEventResult
 } from "./wrappers/commonEventInterfaces";
-
-// /**
-//  * Instantiate a VotingMachineBase given the address of any Arc contract
-//  * that implements the `IntVoteInterface` Arc contract interface.
-//  */
-// export class VotingMachineFactory implements IContractWrapperFactory<VotingMachineBase> {
-
-//   private factory: ContractWrapperFactory<VotingMachineBase>;
-
-//   public new = (...rest: any[]): Promise<VotingMachineBase> => { return this.factory.new(...rest); }
-//   public at = (address: string): Promise<VotingMachineBase> => { return this.factory.at(address); }
-//   public deployed = (): Promise<VotingMachineBase> => { return this.factory.deployed(); }
-
-//   constructor(private web3EventService: Web3EventService) {
-//     this.factory = new ContractWrapperFactory("IntVoteInterface", VotingMachineBase, this.web3EventService);
-//   }
-//   // /**
-//   //  * Create a new VotingMachineBase given a voting machine address
-//   //  * @param votingMachineAddress
-//   //  */
-//   // public async create(votingMachineAddress: Address): Promise<VotingMachineBase> {
-//   //   return this.factory.at(votingMachineAddress);
-//   // }
-// }
 
 /**
  * Provides the services of any voting machine that implements the `IntVoteInterface`
@@ -105,7 +81,10 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`execute is not defined`);
     }
 
-    if (typeof options.numOfChoices !== "number") {
+    // TODO: get MAX_NUM_OF_CHOICES into IntVoteInterface
+    // const numChoices = await this.getNumberOfChoices({ proposalId });
+
+    if (!Number.isInteger(options.numOfChoices)) {
       throw new Error(`numOfChoices must be a number`);
     }
 
@@ -114,11 +93,11 @@ export class VotingMachineBase extends ContractWrapperBase {
     }
 
     if (!options.proposalParameters) {
-      options.proposalParameters = NULL_HASH;
+      options.proposalParameters = Utils.NULL_HASH;
     }
 
     if (!options.proposerAddress) {
-      options.proposerAddress = NULL_ADDRESS;
+      options.proposerAddress = Utils.NULL_ADDRESS;
     }
 
     this.logContractFunctionCall("VotingMachineBase.propose", options);
@@ -362,7 +341,7 @@ export class VotingMachineBase extends ContractWrapperBase {
   protected async _validateVote(vote: number, proposalId: Hash): Promise<void> {
     const numChoices = await this.getNumberOfChoices({ proposalId });
     if (!Number.isInteger(vote) || (vote < 0) || (vote > numChoices)) {
-      throw new Error("vote is not valid");
+      throw new Error("vote choice is not valid");
     }
 
     if ((typeof vote !== "number") || (vote < 0)) {

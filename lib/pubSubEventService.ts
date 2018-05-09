@@ -1,5 +1,6 @@
 import * as PubSub from "pubsub-js";
 import { LoggingService } from "./loggingService";
+import { Utils } from "./utils";
 
 /**
  * A Pub/Sub event system that enables you to subscribe to various events published by Arc.js.
@@ -80,7 +81,7 @@ export class PubSubEventService {
     if (!topic2) { return false; }
     if (!topics1) { return false; }
 
-    topics1 = ensureArray(topics1);
+    topics1 = Utils.ensureArray(topics1);
 
     if (topics1[0] === "*") { return true; }
 
@@ -112,13 +113,6 @@ export class PubSubEventService {
   }
 }
 
-function ensureArray<T>(arr: Array<T> | T): Array<T> {
-  if (!Array.isArray(arr)) {
-    arr = [arr];
-  }
-  return arr;
-}
-
 /**
  * Creates a collection of subscriptions to which one can unsubscribe all at once.
  */
@@ -144,7 +138,7 @@ export class SubscriptionCollection implements IEventSubscription {
    */
   public subscribe(topics: string | Array<string>, callback: EventSubscriptionCallback): void {
 
-    topics = ensureArray(topics);
+    topics = Utils.ensureArray(topics);
 
     topics.forEach((topic: string) => {
       const subscriptionKey = PubSub.subscribe(topic, callback);
