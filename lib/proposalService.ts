@@ -1,6 +1,5 @@
 import { BigNumber } from "bignumber.js";
 import { Address, Hash } from "./commonTypes";
-import { IntVoteInterfaceWrapper } from "./wrappers/intVoteInterface";
 import {
   EntityFetcherFactory,
   EventFetcherFactory,
@@ -8,6 +7,7 @@ import {
   Web3EventService
 } from "./web3EventService";
 import { NewProposalEventResult, VotingMachineExecuteProposalEventResult } from "./wrappers/commonEventInterfaces";
+import { IntVoteInterfaceWrapper } from "./wrappers/intVoteInterface";
 
 /**
  * A single instance of ProposalService provides services relating to a single

@@ -8,8 +8,8 @@ import {
   ContributionRewardWrapper,
   DecodedLogEntryEvent,
   InitializeArcJs,
-  ProposalGeneratorBase,
   IntVoteInterfaceWrapper,
+  ProposalGeneratorBase,
   VotingMachineExecuteProposalEventResult
 } from "../lib/index";
 import { LoggingService, LogLevel } from "../lib/loggingService";

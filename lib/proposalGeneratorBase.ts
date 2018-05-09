@@ -2,8 +2,8 @@ import { Address } from "./commonTypes";
 import { ContractWrapperBase } from "./contractWrapperBase";
 import { ContractWrapperFactory } from "./contractWrapperFactory";
 import { ProposalService } from "./proposalService";
-import { IntVoteInterfaceWrapper, IntVoteInterfaceFactory } from "./wrappers/intVoteInterface";
 import { Web3EventService } from "./web3EventService";
+import { IntVoteInterfaceFactory, IntVoteInterfaceWrapper } from "./wrappers/intVoteInterface";
 
 export abstract class ProposalGeneratorBase extends ContractWrapperBase {
   protected proposalService: ProposalService;

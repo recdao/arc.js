@@ -6,13 +6,13 @@ import {
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalService, VotableProposal } from "../proposalService";
-import { IntVoteInterfaceWrapper } from "./intVoteInterface";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   NewProposalEventResult,
   VoteProposalEventResult,
   VotingMachineExecuteProposalEventResult
 } from "./commonEventInterfaces";
+import { IntVoteInterfaceWrapper } from "./intVoteInterface";
 
 export class AbsoluteVoteWrapper extends IntVoteInterfaceWrapper {
 

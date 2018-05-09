@@ -17,7 +17,6 @@ import { ContractWrapperFactory, IContractWrapperFactory } from "../contractWrap
 import { ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { OwnerVoteOptions, ProposalIdOption, IntVoteInterfaceWrapper } from "./intVoteInterface";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   NewProposalEventResult,
@@ -25,6 +24,7 @@ import {
   VoteProposalEventResult,
   VotingMachineExecuteProposalEventResult,
 } from "./commonEventInterfaces";
+import { IntVoteInterfaceWrapper, OwnerVoteOptions, ProposalIdOption } from "./intVoteInterface";
 
 export class GenesisProtocolWrapper extends IntVoteInterfaceWrapper implements SchemeWrapper {
 

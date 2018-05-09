@@ -6,9 +6,9 @@ import {
   Hash
 } from "../lib/commonTypes";
 import { DecodedLogEntryEvent } from "../lib/contractWrapperBase";
-import { IntVoteInterfaceWrapper } from "../lib/wrappers/intVoteInterface";
 import { AbsoluteVoteWrapper } from "../lib/wrappers/absoluteVote";
 import { VoteProposalEventResult } from "../lib/wrappers/commonEventInterfaces";
+import { IntVoteInterfaceWrapper } from "../lib/wrappers/intVoteInterface";
 import { SchemeRegistrarFactory, SchemeRegistrarWrapper } from "../lib/wrappers/schemeRegistrar";
 import {
   VotableVoteInOrganizationProposal,
