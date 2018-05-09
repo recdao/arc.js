@@ -9,7 +9,7 @@ import {
   DecodedLogEntryEvent,
   InitializeArcJs,
   ProposalGeneratorBase,
-  VotingMachineBase,
+  IntVoteInterfaceWrapper,
   VotingMachineExecuteProposalEventResult
 } from "../lib/index";
 import { LoggingService, LogLevel } from "../lib/loggingService";
@@ -124,12 +124,12 @@ export async function getSchemeVotingMachineParametersHash(dao: DAO, scheme: Sch
 
 export async function getSchemeVotingMachine(
   dao: DAO,
-  scheme: ProposalGeneratorBase): Promise<VotingMachineBase> {
+  scheme: ProposalGeneratorBase): Promise<IntVoteInterfaceWrapper> {
   return await scheme.getVotingMachine(dao.avatar.address);
 }
 
 export async function getVotingMachineParameters(
-  votingMachine: VotingMachineBase,
+  votingMachine: IntVoteInterfaceWrapper,
   votingMachineParamsHash: Hash): Promise<any> {
 
   /**
@@ -144,7 +144,7 @@ export async function getVotingMachineParameters(
  * vote for the proposal given by proposalId.
  */
 export function vote(
-  votingMachine: VotingMachineBase,
+  votingMachine: IntVoteInterfaceWrapper,
   proposalId: Hash,
   theVote: number,
   voter: Address): Promise<ArcTransactionResult> {
@@ -152,12 +152,12 @@ export function vote(
   return votingMachine.vote({ vote: theVote, proposalId, onBehalfOf: voter });
 }
 
-export function wrapperForVotingMachine(votingMachine: VotingMachineBase): ContractWrapperBase {
+export function wrapperForVotingMachine(votingMachine: IntVoteInterfaceWrapper): ContractWrapperBase {
   // Only works if the votingMachine is an instance originally deployed by DAOstack
   return WrapperService.wrappersByAddress.get(votingMachine.address);
 }
 
-export async function voteWasExecuted(votingMachine: VotingMachineBase, proposalId: Hash): Promise<boolean> {
+export async function voteWasExecuted(votingMachine: IntVoteInterfaceWrapper, proposalId: Hash): Promise<boolean> {
   return new Promise((resolve: (ok: boolean) => void, reject: (error: Error) => void): void => {
 
     // TODO: VotingMachineSerice events should suffice

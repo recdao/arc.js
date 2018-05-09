@@ -17,7 +17,7 @@ import { ContractWrapperFactory, IContractWrapperFactory } from "../contractWrap
 import { ProposalService } from "../proposalService";
 import { TransactionService } from "../transactionService";
 import { Utils } from "../utils";
-import { OwnerVoteOptions, ProposalIdOption, VotingMachineBase } from "../votingMachineBase";
+import { OwnerVoteOptions, ProposalIdOption, IntVoteInterfaceWrapper } from "./intVoteInterface";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   NewProposalEventResult,
@@ -26,7 +26,7 @@ import {
   VotingMachineExecuteProposalEventResult,
 } from "./commonEventInterfaces";
 
-export class GenesisProtocolWrapper extends VotingMachineBase implements SchemeWrapper {
+export class GenesisProtocolWrapper extends IntVoteInterfaceWrapper implements SchemeWrapper {
 
   public name: string = "GenesisProtocol";
   public friendlyName: string = "Genesis Protocol";
@@ -867,26 +867,6 @@ export interface GenesisProtocolParams {
    * Default is 1
    */
   votersReputationLossRatio: number;
-}
-
-export interface ProposeVoteConfig {
-  /**
-   * The DAO's avatar under which the proposal is being made.
-   */
-  avatar: Address;
-  /**
-   * Optional address of the agent making the proposal.
-   * Default is the current default account.
-   */
-  proposer?: string;
-  /**
-   * number of choices when voting.  Must be between 1 and 10.
-   */
-  numOfChoices: number;
-  /**
-   * contract that implements ExecutableInterface to invoke if/when the vote passes
-   */
-  executable: string;
 }
 
 export interface GetVoterInfoResult {

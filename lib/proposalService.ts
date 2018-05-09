@@ -1,6 +1,6 @@
 import { BigNumber } from "bignumber.js";
 import { Address, Hash } from "./commonTypes";
-import { VotingMachineBase } from "./votingMachineBase";
+import { IntVoteInterfaceWrapper } from "./wrappers/intVoteInterface";
 import {
   EntityFetcherFactory,
   EventFetcherFactory,
@@ -27,7 +27,7 @@ export class ProposalService {
    * whose event args supply `_proposalId`.  Returns events as a promise of `TProposal`.  You must supply an
    * `EventFetcherFactory` for fetching the events and a callback to transform `TEventArgs` to a promise of `TProposal`.
    * Each entity, when the associated proposal is votable and options.votingMachine is supplied,
-   * will also contain a `votingMachine` property of type `VotingMachineBase`.
+   * will also contain a `votingMachine` property of type `IntVoteInterfaceWrapper`.
    * @type TEventArgs The type of the `args` object in the event.
    * @type TProposal The type of object returned as a transformation of the `args` information in each event.
    * @param options
@@ -76,12 +76,12 @@ export class ProposalService {
 
   /**
    * Returns promise of an EntityFetcherFactory for fetching votable proposals from the
-   * given `VotingMachineBase`. The proposals are returned as promises of instances
+   * given `IntVoteInterfaceWrapper`. The proposals are returned as promises of instances
    * of `VotableProposal`.
    *
    * @param votingMachineAddress
    */
-  public getVotableProposals(votingMachine: VotingMachineBase):
+  public getVotableProposals(votingMachine: IntVoteInterfaceWrapper):
     EntityFetcherFactory<VotableProposal, NewProposalEventResult> {
 
     return this.web3EventService.createEntityFetcherFactory<VotableProposal, NewProposalEventResult>(
@@ -101,12 +101,12 @@ export class ProposalService {
 
   /**
    * Returns promise of an EntityFetcherFactory for fetching executed proposals from the
-   * given `VotingMachineBase`.
+   * given `IntVoteInterfaceWrapper`.
    * The proposals are returned as promises of instances of `ExecutedProposal`.
    *
    * @param votingMachineAddress
    */
-  public getExecutedProposals(votingMachine: VotingMachineBase):
+  public getExecutedProposals(votingMachine: IntVoteInterfaceWrapper):
     EntityFetcherFactory<ExecutedProposal, VotingMachineExecuteProposalEventResult> {
 
     return this.web3EventService.createEntityFetcherFactory<ExecutedProposal, VotingMachineExecuteProposalEventResult>(
@@ -174,9 +174,9 @@ export interface GetProposalEventsOptions<TProposal, TEventArgs extends EventHas
    * Used to determine whether proposals are votable.
    * This is only required when votableOnly is set to `true`.
    */
-  votingMachine?: VotingMachineBase;
+  votingMachine?: IntVoteInterfaceWrapper;
 }
 
 export interface ProposalEntity {
-  votingMachine: VotingMachineBase;
+  votingMachine: IntVoteInterfaceWrapper;
 }

@@ -25,10 +25,13 @@ Often we use schemes for working with proposals. Any scheme that works with prop
 ## Proposals
 [More on Proposals to Come]
 
-### Voting Machines
+## Voting Machines
 
 Voting Machines play an integral part in promoting coherence and collaboration within and between DAOs in the DAOstack ecosystem.  Which voting machine you choose to use for your DAO or DAO scheme, and how you configure it, can profoundly affect emergent qualities of your organization.
 
-Currently Arc.js wraps two Arc voting machines: [AbsoluteVote](/api/classes/AbsoluteVote) and [GenesisProtocol](/api/classes/GenesisProtocol).  You can find more information about [Arc voting machines here](https://daostack.github.io/arc/contracts/VotingMachines/README/).
+!!! tip
+    You can find more information about Arc voting machines here in the [Arc documentation](https://daostack.github.io/arc/contracts/VotingMachines/README/).
 
-While each of these voting machines have their own individual API, they both implement a common interface called 
+Currently Arc.js wraps two Arc voting machines: [AbsoluteVote](/api/classes/AbsoluteVote) and [GenesisProtocol](/api/classes/GenesisProtocol).  While each of these voting machines have their own individual API, they both implement a common Arc interface called `IntVoteInterface`.  Accordingly, the Arc.js voting machine contract wrapper classes implement a common base class called [IntVoteInterfaceWrapper](/api/classes/IntVoteInterfaceWrapper).
+
+`IntVoteInterfaceWrapper` is a contract wrapper in its own right.  It wraps the `IntVoteInterface` contract.  Thus, like any other contract wrapper, you can instantiate it using a factory class, in this case [VotingMachineWrapperFactory]()

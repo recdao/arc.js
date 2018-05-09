@@ -6,7 +6,7 @@ import {
 } from "../contractWrapperBase";
 import { ContractWrapperFactory } from "../contractWrapperFactory";
 import { ProposalService, VotableProposal } from "../proposalService";
-import { VotingMachineBase } from "../votingMachineBase";
+import { IntVoteInterfaceWrapper } from "./intVoteInterface";
 import { EntityFetcherFactory, EventFetcherFactory, Web3EventService } from "../web3EventService";
 import {
   NewProposalEventResult,
@@ -14,7 +14,7 @@ import {
   VotingMachineExecuteProposalEventResult
 } from "./commonEventInterfaces";
 
-export class AbsoluteVoteWrapper extends VotingMachineBase {
+export class AbsoluteVoteWrapper extends IntVoteInterfaceWrapper {
 
   public name: string = "AbsoluteVote";
   public friendlyName: string = "Absolute Vote";

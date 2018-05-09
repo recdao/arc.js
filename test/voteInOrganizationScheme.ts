@@ -6,7 +6,7 @@ import {
   Hash
 } from "../lib/commonTypes";
 import { DecodedLogEntryEvent } from "../lib/contractWrapperBase";
-import { VotingMachineBase } from "../lib/votingMachineBase";
+import { IntVoteInterfaceWrapper } from "../lib/wrappers/intVoteInterface";
 import { AbsoluteVoteWrapper } from "../lib/wrappers/absoluteVote";
 import { VoteProposalEventResult } from "../lib/wrappers/commonEventInterfaces";
 import { SchemeRegistrarFactory, SchemeRegistrarWrapper } from "../lib/wrappers/schemeRegistrar";
@@ -18,7 +18,7 @@ import {
 import * as helpers from "./helpers";
 
 const createProposal =
-  async (): Promise<{ proposalId: Hash, votingMachine: VotingMachineBase, scheme: SchemeRegistrarWrapper }> => {
+  async (): Promise<{ proposalId: Hash, votingMachine: IntVoteInterfaceWrapper, scheme: SchemeRegistrarWrapper }> => {
 
     const originalDao = await helpers.forgeDao({
       founders: [{
@@ -183,7 +183,7 @@ describe("VoteInOrganizationScheme", () => {
     await votingMachine.vote({ vote: BinaryVoteResult.Yes, proposalId: result.proposalId, onBehalfOf: accounts[2] });
     /**
      * confirm that a vote was cast by the original DAO's scheme
-     * TODO:  this event should work with VotingMachineBase
+     * TODO:  this event should work with IntVoteInterfaceWrapper
      */
     const votingMachineWrapper = helpers.wrapperForVotingMachine(proposalInfo.votingMachine) as AbsoluteVoteWrapper;
     const originalVoteEvent = votingMachineWrapper.VoteProposal({}, { fromBlock: 0 });

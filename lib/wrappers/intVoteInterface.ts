@@ -1,29 +1,29 @@
 import { BigNumber } from "bignumber.js";
-import { Address, Hash } from "./commonTypes";
+import { Address, Hash } from "../commonTypes";
 import {
   ArcTransactionProposalResult,
   ArcTransactionResult,
   ContractWrapperBase,
   DecodedLogEntryEvent,
   TransactionReceiptTruffle
-} from "./contractWrapperBase";
-import { ContractWrapperFactory, IContractWrapperFactory } from "./contractWrapperFactory";
-import { Utils } from "./utils";
-import { EventFetcherFactory, Web3EventFetcher, Web3EventService } from "./web3EventService";
-import { CancelProposalEventResult, CancelVotingEventResult } from "./wrappers/absoluteVote";
+} from "../contractWrapperBase";
+import { ContractWrapperFactory, IContractWrapperFactory } from "../contractWrapperFactory";
+import { Utils } from "../utils";
+import { EventFetcherFactory, Web3EventFetcher, Web3EventService } from "../web3EventService";
+import { CancelProposalEventResult, CancelVotingEventResult } from "../wrappers/absoluteVote";
 import {
   NewProposalEventResult,
   VoteProposalEventResult,
   VotingMachineExecuteProposalEventResult
-} from "./wrappers/commonEventInterfaces";
+} from "../wrappers/commonEventInterfaces";
 
 /**
  * Provides the services of any voting machine that implements the `IntVoteInterface`
  * Arc contract interface.
  */
-export class VotingMachineBase extends ContractWrapperBase {
+export class IntVoteInterfaceWrapper extends ContractWrapperBase {
 
-  public factory: IContractWrapperFactory<any> = VotingMachineFactory;
+  public factory: IContractWrapperFactory<any> = IntVoteInterfaceFactory;
   public name: string = "IntVoteInterface";
   public friendlyName: string = "IntVoteInterface";
 
@@ -100,9 +100,9 @@ export class VotingMachineBase extends ContractWrapperBase {
       options.proposerAddress = Utils.NULL_ADDRESS;
     }
 
-    this.logContractFunctionCall("VotingMachineBase.propose", options);
+    this.logContractFunctionCall("IntVoteInterface.propose", options);
 
-    const tx = await this.wrapTransactionInvocation("VotingMachineBase.propose",
+    const tx = await this.wrapTransactionInvocation("IntVoteInterfaceWrapper.propose",
       options,
       () => {
         return this.contract.propose(
@@ -124,9 +124,9 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`proposalId is not defined`);
     }
 
-    this.logContractFunctionCall("VotingMachineBase.cancelProposal", options);
+    this.logContractFunctionCall("IntVoteInterface.cancelProposal", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.cancelProposal",
+    return this.wrapTransactionInvocation("IntVoteInterfaceWrapper.cancelProposal",
       options,
       () => {
         return this.contract.cancelProposal(options.proposalId);
@@ -146,9 +146,9 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`voterAddress is not defined`);
     }
 
-    this.logContractFunctionCall("VotingMachineBase.ownerVote", options);
+    this.logContractFunctionCall("IntVoteInterface.ownerVote", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.ownerVote",
+    return this.wrapTransactionInvocation("IntVoteInterfaceWrapper.ownerVote",
       options,
       () => {
         return this.contract.ownerVote(
@@ -168,9 +168,9 @@ export class VotingMachineBase extends ContractWrapperBase {
     }
     await this._validateVote(options.vote, options.proposalId);
 
-    this.logContractFunctionCall("VotingMachineBase.vote", options);
+    this.logContractFunctionCall("IntVoteInterface.vote", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.vote",
+    return this.wrapTransactionInvocation("IntVoteInterfaceWrapper.vote",
       options,
       () => {
         return this.contract.vote(
@@ -193,9 +193,9 @@ export class VotingMachineBase extends ContractWrapperBase {
 
     await this._validateVote(options.vote, options.proposalId);
 
-    this.logContractFunctionCall("VotingMachineBase.voteWithSpecifiedAmounts", options);
+    this.logContractFunctionCall("IntVoteInterface.voteWithSpecifiedAmounts", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.voteWithSpecifiedAmounts",
+    return this.wrapTransactionInvocation("IntVoteInterfaceWrapper.voteWithSpecifiedAmounts",
       options,
       () => {
         // tokens, the last parameter, is ignored
@@ -215,9 +215,9 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`proposalId is not defined`);
     }
 
-    this.logContractFunctionCall("VotingMachineBase.cancelVote", options);
+    this.logContractFunctionCall("IntVoteInterface.cancelVote", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.cancelVote",
+    return this.wrapTransactionInvocation("IntVoteInterfaceWrapper.cancelVote",
       options,
       () => {
         return this.contract.cancelVote(options.proposalId);
@@ -233,7 +233,7 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`proposalId is not defined`);
     }
 
-    this.logContractFunctionCall("VotingMachineBase.getNumberOfChoices", options);
+    this.logContractFunctionCall("IntVoteInterface.getNumberOfChoices", options);
 
     return (await this.contract.getNumberOfChoices(options.proposalId)).toNumber();
   }
@@ -247,7 +247,7 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`proposalId is not defined`);
     }
 
-    this.logContractFunctionCall("VotingMachineBase.isVotable", options);
+    this.logContractFunctionCall("IntVoteInterface.isVotable", options);
 
     return await this.contract.isVotable(options.proposalId);
   }
@@ -262,7 +262,7 @@ export class VotingMachineBase extends ContractWrapperBase {
     }
     await this._validateVote(options.vote, options.proposalId);
 
-    this.logContractFunctionCall("VotingMachineBase.voteStatus", options);
+    this.logContractFunctionCall("IntVoteInterface.voteStatus", options);
 
     return await this.contract.voteStatus(
       options.proposalId,
@@ -274,7 +274,7 @@ export class VotingMachineBase extends ContractWrapperBase {
    */
   public async isAbstainAllow(): Promise<boolean> {
 
-    this.logContractFunctionCall("VotingMachineBase.isAbstainAllow");
+    this.logContractFunctionCall("IntVoteInterface.isAbstainAllow");
 
     return await this.contract.isAbstainAllow();
   }
@@ -289,9 +289,9 @@ export class VotingMachineBase extends ContractWrapperBase {
       throw new Error(`proposalId is not defined`);
     }
 
-    this.logContractFunctionCall("VotingMachineBase.execute", options);
+    this.logContractFunctionCall("IntVoteInterface.execute", options);
 
-    return this.wrapTransactionInvocation("VotingMachineBase.execute",
+    return this.wrapTransactionInvocation("IntVoteInterfaceWrapper.execute",
       options,
       () => {
         return this.contract.execute(options.proposalId);
@@ -350,8 +350,8 @@ export class VotingMachineBase extends ContractWrapperBase {
   }
 }
 
-export const VotingMachineFactory =
-  new ContractWrapperFactory("IntVoteInterface", VotingMachineBase, new Web3EventService());
+export const IntVoteInterfaceFactory =
+  new ContractWrapperFactory("IntVoteInterface", IntVoteInterfaceWrapper, new Web3EventService());
 
 /**
  * The Arc contract `IntVoteInterface`.
@@ -364,9 +364,9 @@ export interface IntVoteInterface {
   CancelVoting: Web3EventFetcher;
 
   propose(numOfChoices: number,
-          proposalParameters: Hash,
-          avatar: Address,
-          execute: Address): Promise<TransactionReceiptTruffle>;
+    proposalParameters: Hash,
+    avatar: Address,
+    execute: Address): Promise<TransactionReceiptTruffle>;
   cancelProposal(proposalId: Hash): Promise<TransactionReceiptTruffle>;
   ownerVote(proposalId: Hash, vote: number, voter: Address): Promise<TransactionReceiptTruffle>;
   // options is not part of Arc, rather is part of truffle. Declared here for onBehalfOf

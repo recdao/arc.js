@@ -153,7 +153,7 @@ export class DaoCreatorWrapper extends ContractWrapperBase {
      * resend sub-events as txReceipts.DaoCreator.setSchemes
      */
     TransactionService.pushContext(
-      ["txReceipts.ContractWrapperBase", "txReceipts.VotingMachineBase"],
+      ["txReceipts.ContractWrapperBase", "txReceipts.IntVoteInterfaceWrapper"],
       txReceiptEventPayload);
 
     let tx;

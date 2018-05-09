@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { BinaryVoteResult, VotingMachineBase } from "../lib";
+import { BinaryVoteResult, IntVoteInterfaceWrapper } from "../lib";
 import { ArcTransactionProposalResult, DecodedLogEntryEvent } from "../lib/contractWrapperBase";
 import { DAO } from "../lib/dao";
 import { AbsoluteVoteWrapper } from "../lib/wrappers/absoluteVote";
@@ -15,7 +15,7 @@ import * as helpers from "./helpers";
 describe("ContributionReward scheme", () => {
   let dao: DAO;
   let scheme: ContributionRewardWrapper;
-  let votingMachine: VotingMachineBase;
+  let votingMachine: IntVoteInterfaceWrapper;
 
   beforeEach(async () => {
 
