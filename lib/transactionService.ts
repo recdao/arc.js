@@ -93,6 +93,8 @@ export class TransactionService extends PubSubEventService {
       topicTriggerFilter: Utils.ensureArray(topicTriggerFilter),
     };
     TransactionService.contextStack.push(eventContext);
+    LoggingService.debug(`TransactionService.pushContext: length: ${TransactionService.contextStack.length}`);
+
     return eventContext;
   }
 
@@ -104,7 +106,10 @@ export class TransactionService extends PubSubEventService {
       LoggingService.warn(`popContext: TransactionService.eventContext is already empty`);
     }
     // give queued events a chance to go out before popping the context
-    setTimeout(TransactionService.contextStack.pop, 0);
+    setTimeout(() => {
+      TransactionService.contextStack.pop();
+      LoggingService.debug(`TransactionService.popContext: length: ${TransactionService.contextStack.length}`);
+    }, 0);
   }
 
   private static contextStack: Array<EventContext> = new Array<EventContext>();
