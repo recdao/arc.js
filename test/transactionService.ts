@@ -7,7 +7,7 @@ describe("TransactionService", () => {
   it("can get tx events from DAO.new", async () => {
 
     let txCount = 0;
-    let invocationKey: Symbol;
+    let invocationKey: symbol;
 
     const subscription = TransactionService.subscribe("txReceipts.DAO.new",
       (topic: string, txEventInfo: TransactionReceiptsEventInfo) => {
