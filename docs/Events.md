@@ -109,6 +109,7 @@ const events = await eventFetcher.get();
 events.forEach((event) => { console.log(`proposal id: ${event._proposalId}`); } );
 ```
 
+<a name="entityevents"></a>
 ### Entities for Web3 Events
 You can use [Web3EventService](api/classes/Web3EventService) to turn any [EventFetcherFactory](api/README/#eventfetcherfactory) into an [EntityFetcherFactory](api/README/#entityfetcherfactory) providing cleaner and potentially richer entities than what you get from Web3 and [EventFetcherFactory](api/README/#eventfetcherfactory).
 

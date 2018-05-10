@@ -113,7 +113,7 @@ export class IntVoteInterfaceWrapper extends ContractWrapperBase {
           options.executable,
           options.proposerAddress);
       });
-    return new ArcTransactionProposalResult(tx.tx);
+    return new ArcTransactionProposalResult(tx.tx, this);
   }
 
   /**
@@ -351,8 +351,20 @@ export class IntVoteInterfaceWrapper extends ContractWrapperBase {
   }
 }
 
+export class IntVoteInterfaceFactoryType extends ContractWrapperFactory<IntVoteInterfaceWrapper> {
+  public async new(): Promise<IntVoteInterfaceWrapper> {
+    throw new Error("`new` is not supported on IntVoteInterface. Only `at` is supported.");
+  }
+  public async deployed(): Promise<IntVoteInterfaceWrapper> {
+    throw new Error("`deployed` is not supported on IntVoteInterface. Only `at` is supported.");
+  }
+}
+
 export const IntVoteInterfaceFactory =
-  new ContractWrapperFactory("IntVoteInterface", IntVoteInterfaceWrapper, new Web3EventService());
+  new IntVoteInterfaceFactoryType(
+    "IntVoteInterface",
+    IntVoteInterfaceWrapper,
+    new Web3EventService()) as IntVoteInterfaceFactoryType;
 
 /**
  * The Arc contract `IntVoteInterface`.

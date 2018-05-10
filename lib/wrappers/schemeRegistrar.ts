@@ -94,7 +94,7 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   public async proposeToRemoveScheme(
@@ -120,7 +120,7 @@ export class SchemeRegistrarWrapper extends ProposalGeneratorBase implements Sch
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   public async setParameters(params: SchemeRegistrarParams): Promise<ArcTransactionDataResult<Hash>> {

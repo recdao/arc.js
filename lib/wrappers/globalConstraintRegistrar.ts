@@ -62,7 +62,7 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   public async proposeToRemoveGlobalConstraint(
@@ -89,7 +89,7 @@ export class GlobalConstraintRegistrarWrapper extends ProposalGeneratorBase impl
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   /**

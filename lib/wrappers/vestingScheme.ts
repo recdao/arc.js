@@ -80,7 +80,7 @@ export class VestingSchemeWrapper extends ProposalGeneratorBase implements Schem
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   /**

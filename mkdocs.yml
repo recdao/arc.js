@@ -32,7 +32,7 @@ pages:
 - 'Configuration': 'Configuration.md'
 - 'DAOs': 'Daos.md'
 - 'Contract Wrappers': 'Wrappers.md'
-- 'Proposals and Schemes': 'Proposals.md'
+- 'Schemes, Proposals and Voting Machines': 'Proposals.md'
 - 'Events': 'Events.md'
 - 'Tracking Transactions': 'Transactions.md'
 - 'Scripts': 'Scripts.md'

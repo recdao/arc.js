@@ -57,7 +57,7 @@ export class VoteInOrganizationSchemeWrapper extends ProposalGeneratorBase imple
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   /**

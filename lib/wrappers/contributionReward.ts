@@ -155,7 +155,7 @@ export class ContributionRewardWrapper extends ProposalGeneratorBase implements 
 
     TransactionService.publishTxEvent(eventTopic, txReceiptEventPayload, tx);
 
-    return new ArcTransactionProposalResult(tx);
+    return new ArcTransactionProposalResult(tx, await this.getVotingMachine(options.avatar));
   }
 
   /**

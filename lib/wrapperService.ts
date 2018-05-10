@@ -23,10 +23,6 @@ import {
   GlobalConstraintRegistrarWrapper
 } from "./wrappers/globalConstraintRegistrar";
 import {
-  IntVoteInterfaceFactory,
-  IntVoteInterfaceWrapper
-} from "./wrappers/intVoteInterface";
-import {
   SchemeRegistrarFactory,
   SchemeRegistrarWrapper
 } from "./wrappers/schemeRegistrar";
@@ -57,7 +53,6 @@ export interface ArcWrapperFactories {
   DaoCreator: ContractWrapperFactory<DaoCreatorWrapper>;
   GenesisProtocol: ContractWrapperFactory<GenesisProtocolWrapper>;
   GlobalConstraintRegistrar: ContractWrapperFactory<GlobalConstraintRegistrarWrapper>;
-  IntVoteInterface: ContractWrapperFactory<IntVoteInterfaceWrapper>;
   SchemeRegistrar: ContractWrapperFactory<SchemeRegistrarWrapper>;
   TokenCapGC: ContractWrapperFactory<TokenCapGCWrapper>;
   UpgradeScheme: ContractWrapperFactory<UpgradeSchemeWrapper>;
@@ -75,7 +70,6 @@ export interface ArcWrappers {
   DaoCreator: DaoCreatorWrapper;
   GenesisProtocol: GenesisProtocolWrapper;
   GlobalConstraintRegistrar: GlobalConstraintRegistrarWrapper;
-  IntVoteInterface: IntVoteInterfaceWrapper;
   SchemeRegistrar: SchemeRegistrarWrapper;
   TokenCapGC: TokenCapGCWrapper;
   UpgradeScheme: UpgradeSchemeWrapper;
@@ -160,7 +154,6 @@ export class WrapperService {
     WrapperService.wrappers.DaoCreator = filter.DaoCreator ? await DaoCreatorFactory.deployed() : null;
     WrapperService.wrappers.GenesisProtocol = filter.GenesisProtocol ? await GenesisProtocolFactory.deployed() : null;
     WrapperService.wrappers.GlobalConstraintRegistrar = filter.GlobalConstraintRegistrar ? await GlobalConstraintRegistrarFactory.deployed() : null;
-    WrapperService.wrappers.IntVoteInterface = filter.IntVoteInterface ? await IntVoteInterfaceFactory.deployed() : null;
     WrapperService.wrappers.SchemeRegistrar = filter.SchemeRegistrar ? await SchemeRegistrarFactory.deployed() : null;
     WrapperService.wrappers.TokenCapGC = filter.TokenCapGC ? await TokenCapGCFactory.deployed() : null;
     WrapperService.wrappers.UpgradeScheme = filter.UpgradeScheme ? await UpgradeSchemeFactory.deployed() : null;
@@ -177,7 +170,6 @@ export class WrapperService {
     ];
     WrapperService.wrappersByType.other = [
       WrapperService.wrappers.DaoCreator,
-      WrapperService.wrappers.IntVoteInterface,
     ];
     WrapperService.wrappersByType.schemes = [
       WrapperService.wrappers.ContributionReward,
@@ -205,8 +197,6 @@ export class WrapperService {
     WrapperService.factories.GenesisProtocol = GenesisProtocolFactory as ContractWrapperFactory<GenesisProtocolWrapper>;
     WrapperService.factories.GlobalConstraintRegistrar = GlobalConstraintRegistrarFactory as
       ContractWrapperFactory<GlobalConstraintRegistrarWrapper>;
-    WrapperService.factories.IntVoteInterface = IntVoteInterfaceFactory as
-      ContractWrapperFactory<IntVoteInterfaceWrapper>;
     WrapperService.factories.SchemeRegistrar = SchemeRegistrarFactory as ContractWrapperFactory<SchemeRegistrarWrapper>;
     WrapperService.factories.TokenCapGC = TokenCapGCFactory as ContractWrapperFactory<TokenCapGCWrapper>;
     WrapperService.factories.UpgradeScheme = UpgradeSchemeFactory as ContractWrapperFactory<UpgradeSchemeWrapper>;
@@ -255,7 +245,6 @@ export class WrapperService {
     DaoCreator: true,
     GenesisProtocol: true,
     GlobalConstraintRegistrar: true,
-    IntVoteInterface: true,
     SchemeRegistrar: true,
     TokenCapGC: true,
     UpgradeScheme: true,
@@ -269,7 +258,6 @@ export class WrapperService {
     DaoCreator: false,
     GenesisProtocol: false,
     GlobalConstraintRegistrar: false,
-    IntVoteInterface: false,
     SchemeRegistrar: false,
     TokenCapGC: false,
     UpgradeScheme: false,
@@ -285,7 +273,6 @@ export interface WrapperFilter {
   DaoCreator?: boolean;
   GenesisProtocol?: boolean;
   GlobalConstraintRegistrar?: boolean;
-  IntVoteInterface?: boolean;
   SchemeRegistrar?: boolean;
   TokenCapGC?: boolean;
   UpgradeScheme?: boolean;

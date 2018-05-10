@@ -55,7 +55,7 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   /********************************************
@@ -89,7 +89,7 @@ export class UpgradeSchemeWrapper extends ProposalGeneratorBase implements Schem
         );
       });
 
-    return new ArcTransactionProposalResult(txResult.tx);
+    return new ArcTransactionProposalResult(txResult.tx, await this.getVotingMachine(options.avatar));
   }
 
   public async setParameters(params: StandardSchemeParams): Promise<ArcTransactionDataResult<Hash>> {

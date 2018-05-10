@@ -33,14 +33,19 @@ describe("ContributionReward scheme", () => {
     votingMachine = await scheme.getVotingMachine(dao.avatar.address);
   });
 
-  const proposeReward = (rewardsSpec: any): Promise<ArcTransactionProposalResult> => {
-    return scheme.proposeContributionReward(Object.assign({
+  const proposeReward = async (rewardsSpec: any): Promise<ArcTransactionProposalResult> => {
+    const result = await scheme.proposeContributionReward(Object.assign({
       avatar: dao.avatar.address,
       beneficiaryAddress: accounts[1],
       description: "A new contribution",
       numberOfPeriods: 1,
       periodLength: 1,
     }, rewardsSpec));
+
+    assert.isOk(result.proposalId);
+    assert.isOk(result.votingMachine);
+
+    return result;
   };
 
   it("can create and propose with orgNativeTokenFee", async () => {

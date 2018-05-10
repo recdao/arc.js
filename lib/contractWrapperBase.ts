@@ -1,4 +1,5 @@
 import { TransactionReceipt } from "web3";
+import { IntVoteInterfaceWrapper } from ".";
 import { AvatarService } from "./avatarService";
 import { Address, HasContract, Hash, SchemePermissions } from "./commonTypes";
 import { IContractWrapperFactory } from "./contractWrapperFactory";
@@ -282,21 +283,29 @@ export class ArcTransactionResult {
 export class ArcTransactionProposalResult extends ArcTransactionResult {
 
   /**
-   * unique hash identifying a proposal
+   * A unique hash identifying the proposal.
    */
-  public proposalId: string;
+  public proposalId: Hash;
+  /**
+   * The proposal's voting machine, as IntVoteInterfaceWrapper
+   */
+  public votingMachine: IntVoteInterfaceWrapper;
 
-  constructor(tx: TransactionReceiptTruffle) {
+  constructor(
+    tx: TransactionReceiptTruffle,
+    votingMachine: IntVoteInterfaceWrapper) {
     super(tx);
     this.proposalId = Utils.getValueFromLogs(tx, "_proposalId");
+    this.votingMachine = votingMachine;
   }
 }
+
 /**
  * Base or actual type returned by all contract wrapper methods that generate a transaction and any other result.
  */
 export class ArcTransactionDataResult<TData> extends ArcTransactionResult {
   /**
-   * The data result to be returned
+   * Additional data being returned.
    */
   public result: TData;
 
