@@ -181,7 +181,7 @@ export class GenesisProtocolWrapper extends IntVoteInterfaceWrapper implements S
    * as well as the GenesisProtocol parameters thresholdConstA and thresholdConstB.
    * @param {GetThresholdConfig} options
    */
-  public getThreshold(options: GetThresholdConfig = {} as GetThresholdConfig): Promise<BigNumber.BigNumber> {
+  public getThreshold(options: GetThresholdConfig = {} as GetThresholdConfig): Promise<BigNumber> {
 
     if (!options.avatar) {
       throw new Error("avatar is not defined");
